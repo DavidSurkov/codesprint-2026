@@ -167,6 +167,8 @@ const donationQuery = (filters: DonationFilters) => {
 export const api = {
     activeCampaigns: () =>
         request<ApiCampaign[]>('/api/campaigns/active').then((campaigns) => campaigns.map(mapCampaign)),
+    campaignDashboard: (campaignId: string) =>
+        request<ApiDashboard>(`/api/campaigns/${encodeURIComponent(campaignId)}/dashboard`).then(mapDashboard),
     createDonation: (body: Json) =>
         request<ApiDonation>('/api/donations', {
             method: 'POST',

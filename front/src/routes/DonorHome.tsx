@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { t, type Lang } from '../i18n';
-import type { Campaign, Currency } from '../types';
+import type { Campaign, Currency, Dashboard } from '../types';
 import { classNames, currencies, enumLabel, money } from '../utils';
 import {
     Button,
@@ -24,6 +24,7 @@ import {
 export const DonorHome = ({ lang }: { lang: Lang }) => {
     const navigate = useNavigate();
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+    const [dashboard, setDashboard] = useState<Dashboard | null>(null);
     const [campaignId, setCampaignId] = useState('');
     const [currency, setCurrency] = useState<Currency>('EUR');
     const [amount, setAmount] = useState('25');
@@ -54,6 +55,8 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
     }, []);
 
     const campaign = campaigns.find((item) => item.id === campaignId) || null;
+    const goalProgress = dashboard?.progressVsGoal ?? 0;
+    const goalProgressLabel = `${goalProgress}%`;
     const amountError = Number(amount) > 0 ? '' : t(lang, 'amountAboveZero');
     const receiptError = receiptChannel === 'none' || receiptContact ? '' : t(lang, 'receiptContactError');
     const cardDigits = cardNumber.replace(/\D/g, '');
@@ -70,6 +73,22 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                     ? t(lang, 'cardCvcError')
                     : '';
     const canSubmit = campaign && !amountError && !receiptError && !cardError;
+
+    useEffect(() => {
+        if (!campaignId) {
+            setDashboard(null);
+            return;
+        }
+        let isMounted = true;
+        api.campaignDashboard(campaignId)
+            .then((next) => {
+                if (isMounted) setDashboard(next);
+            })
+            .catch((requestError: Error) => setError(requestError.message));
+        return () => {
+            isMounted = false;
+        };
+    }, [campaignId]);
 
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -138,14 +157,36 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     <p className="mt-0.5 text-slate-600 dark:text-slate-400">{campaign.cause}</p>
                                 </div>
                             </div>
-                            <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
-                                <span className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
-                                    <IconTarget className="h-4 w-4" />
-                                    {t(lang, 'fundraisingGoal')}
-                                </span>
-                                <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
-                                    {money(campaign.goalAmount, campaign.currency)}
-                                </span>
+                            <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+                                <div className="flex items-center justify-between gap-4">
+                                    <span className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
+                                        <IconTarget className="h-4 w-4" />
+                                        {t(lang, 'fundraisingGoal')}
+                                    </span>
+                                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                        {goalProgressLabel}
+                                    </span>
+                                </div>
+                                <div
+                                    className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"
+                                    role="progressbar"
+                                    aria-label={t(lang, 'progress')}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    aria-valuenow={Math.round(goalProgress)}
+                                >
+                                    <div
+                                        className="h-full rounded-full transition-all"
+                                        style={{
+                                            width: `${Math.min(Math.max(goalProgress, 0), 100)}%`,
+                                            backgroundColor: campaign.color,
+                                        }}
+                                    />
+                                </div>
+                                <div className="mt-2 flex items-center justify-between gap-4 text-sm text-slate-600 dark:text-slate-400">
+                                    <span>{money(dashboard?.totalRaisedEur ?? 0, 'EUR')}</span>
+                                    <span>{money(campaign.goalAmount, campaign.currency)}</span>
+                                </div>
                             </div>
                         </div>
                     </Card>

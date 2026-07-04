@@ -1,4 +1,10 @@
-import { activeCampaigns, createDonationController, getDonationController, health } from './controllers/public.js';
+import {
+    activeCampaigns,
+    campaignDashboard,
+    createDonationController,
+    getDonationController,
+    health,
+} from './controllers/public.js';
 import { exportCsv, exportPdf } from './controllers/exports.js';
 import { handleAdmin } from './controllers/admin.js';
 import { httpError, type Context } from './http.js';
@@ -10,6 +16,10 @@ export const handle = async (context: Context) => {
     if (method === 'GET' && pathname === '/health') return health();
     if (method === 'GET' && pathname === '/api/campaigns/active') {
         return activeCampaigns();
+    }
+    const campaignDashboardMatch = pathname.match(/^\/api\/campaigns\/([^/]+)\/dashboard$/);
+    if (method === 'GET' && campaignDashboardMatch) {
+        return campaignDashboard(campaignDashboardMatch[1]);
     }
     if (method === 'POST' && pathname === '/api/donations') {
         return createDonationController(context);
