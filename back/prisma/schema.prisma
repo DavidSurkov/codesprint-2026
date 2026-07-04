@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  auditor
+  volunteer
+  charity_admin
+}
+
+enum CampaignStatus {
+  draft
+  active
+  ended
+  archived
+}
+
+enum Currency {
+  EUR
+  USD
+  GBP
+}
+
+enum DonationStatus {
+  pending
+  succeeded
+  declined
+  cancelled
+  failed
+}
+
+enum PaymentMethod {
+  card
+  tap
+}
+
+enum ReceiptChannel {
+  email
+  sms
+  none
+}
+
+enum MastercardSource {
+  donate_api
+  simulated_tap
+}
+
+model User {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  name         String
+  role         Role
+  passwordHash String
+  sessions     Session[]
+  auditLogs    AuditLog[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("sessions")
+}
+
+model Campaign {
+  id               String         @id @default(uuid())
+  name             String
+  cause            String
+  description      String
+  logoUrl          String?
+  color            String
+  goalAmountCents  Int
+  currency         Currency       @default(EUR)
+  suggestedAmounts Int[]
+  status           CampaignStatus @default(draft)
+  startsAt         DateTime
+  endsAt           DateTime?
+  donations        Donation[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@map("campaigns")
+}
+
+model Donation {
+  id                         String              @id @default(uuid())
+  campaignId                 String
+  campaign                   Campaign            @relation(fields: [campaignId], references: [id])
+  amountCents                Int
+  currency                   Currency
+  paymentMethod              PaymentMethod
+  status                     DonationStatus      @default(pending)
+  receiptChannel             ReceiptChannel      @default(none)
+  receiptContactMasked       String?
+  receiptQueued              Boolean             @default(false)
+  mastercardDonorReference   String?
+  mastercardEnrollmentRef    String?
+  mastercardTransactionId    String?
+  mastercardCorrelationId    String?
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
+  mastercardEvents           MastercardEvent[]
+
+  @@map("donations")
+}
+
+model MastercardEvent {
+  id             String             @id @default(uuid())
+  source         MastercardSource
+  transactionId  String?
+  donationId     String
+  donation       Donation           @relation(fields: [donationId], references: [id])
+  status         DonationStatus
+  amountCents    Int
+  currency       Currency
+  correlationId  String
+  processedAt    DateTime
+  errorCode      String?
+  errorMessage   String?
+  createdAt      DateTime           @default(now())
+
+  @@map("mastercard_events")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json
+  requestId String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}

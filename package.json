@@ -1,0 +1,20 @@
+{
+  "name": "tap-for-good",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev:back": "pnpm --dir back dev",
+    "dev:front": "pnpm --dir front dev",
+    "build": "pnpm --dir back build",
+    "build:front": "pnpm --dir front build",
+    "build:all": "pnpm run build && pnpm run build:front",
+    "start": "pnpm --dir back start",
+    "db:generate": "pnpm --dir back db:generate",
+    "db:migrate": "pnpm --dir back db:migrate",
+    "db:seed": "pnpm --dir back db:seed",
+    "lint": "pnpm --dir back lint",
+    "test": "pnpm run lint"
+  }
+}
