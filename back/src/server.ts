@@ -1,8 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import http, { type ServerResponse } from 'node:http';
 import { URL } from 'node:url';
-import { ZodError } from 'zod';
-import { handle, HttpError } from './app.js';
+import { handle } from './app.js';
 import { createLogger } from './logger.js';
 
 const logger = createLogger('http');
@@ -28,29 +27,34 @@ const server = http.createServer((request, response) => {
   const context = { request, response, requestId, url };
 
   handle(context)
-    .then((body) => {
-      if (!response.writableEnded) send(response, 200, body, requestId);
-    })
-    .catch((error: unknown) => {
-      const status =
-        error instanceof HttpError
-          ? error.status
-          : error instanceof ZodError
-            ? 400
-            : 500;
-      const message =
-        error instanceof HttpError || error instanceof ZodError
-          ? error.message
-          : 'Internal server error';
-
-      logger[status >= 500 ? 'error' : 'warn']('request failed', {
+    .then((result) => {
+      if (response.writableEnded) return;
+      if (result.ok) {
+        send(response, 200, result.value, requestId);
+        return;
+      }
+      const { status, message } = result.error;
+      logger.warn('request failed', {
         requestId,
         method: request.method,
         path: url.pathname,
         status,
-        error: error instanceof Error ? error.message : String(error),
+        error: message,
       });
       send(response, status, { error: message, message, requestId }, requestId);
+    })
+    .catch((error: unknown) => {
+      const message = 'Internal server error';
+      logger.error('unexpected request failure', {
+        requestId,
+        method: request.method,
+        path: url.pathname,
+        status: 500,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      if (!response.writableEnded) {
+        send(response, 500, { error: message, message, requestId }, requestId);
+      }
     });
 });
 
