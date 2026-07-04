@@ -59,6 +59,10 @@ const canEditCampaigns = (role: Role) =>
 
 const canArchiveCampaigns = (role: Role) => role === 'charity_admin';
 
+const canViewCampaigns = (role: Role) => role !== 'auditor';
+
+const canViewControls = (role: Role) => role !== 'volunteer';
+
 const useLocalBoolean = (key: string) => {
   const [value, setValue] = useState(() => localStorage.getItem(key) === '1');
 
@@ -199,10 +203,19 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
   const amountError = Number(amount) > 0 ? '' : 'Enter an amount above zero.';
   const receiptError =
     receiptChannel === 'none' || receiptContact ? '' : 'Receipt contact needed.';
+  const cardDigits = cardNumber.replace(/\D/g, '');
   const cardError =
-    paymentMethod === 'tap' || (cardName && cardNumber && cardExpiry && cardCvc)
+    paymentMethod === 'tap'
       ? ''
-      : 'Card details needed.';
+      : !cardName.trim()
+        ? 'Name on card needed.'
+        : !/^\d{12,19}$/.test(cardDigits)
+          ? 'Card number must be 12 to 19 digits.'
+          : !/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry)
+            ? 'Expiry must use MM/YY.'
+            : !/^\d{3,4}$/.test(cardCvc)
+              ? 'CVC must be 3 or 4 digits.'
+              : '';
   const canSubmit = campaign && !amountError && !receiptError && !cardError;
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -478,14 +491,40 @@ const Confirmation = ({ lang }: { lang: Lang }) => {
               <dd>{money(donation.amount, donation.currency)}</dd>
             </div>
             <div>
-              <dt className="font-medium">{t(lang, 'receipt')}</dt>
-              <dd>{donation.receiptState || donation.receiptChannel || 'none'}</dd>
+              <dt className="font-medium">{t(lang, 'campaign')}</dt>
+              <dd>{donation.campaignName || donation.campaignId}</dd>
             </div>
+            <div>
+              <dt className="font-medium">Date</dt>
+              <dd>{formatDate(donation.createdAt)}</dd>
+            </div>
+            <div>
+              <dt className="font-medium">Payment</dt>
+              <dd>{donation.paymentMethod}</dd>
+            </div>
+            <div>
+              <dt className="font-medium">{t(lang, 'receipt')}</dt>
+              <dd>
+                {donation.receiptState || donation.receiptChannel || 'none'}
+                {donation.maskedReceiptContact
+                  ? ` · ${donation.maskedReceiptContact}`
+                  : ''}
+              </dd>
+            </div>
+            {donation.mastercardTransactionId && (
+              <div>
+                <dt className="font-medium">Mastercard ID</dt>
+                <dd>{donation.mastercardTransactionId}</dd>
+              </div>
+            )}
           </dl>
         )}
         <Link className="focus-ring mt-6 inline-block rounded text-emerald-800" to="/">
           Make another donation
         </Link>
+        {donation?.receiptState === 'queued' && (
+          <Button onClick={() => window.print()}>{t(lang, 'printReceipt')}</Button>
+        )}
       </section>
     </main>
   );
@@ -571,11 +610,14 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
 
   const links = [
     ['/admin', t(lang, 'dashboard')],
-    ['/admin/campaigns', t(lang, 'campaigns')],
+    canViewCampaigns(user.role) && ['/admin/campaigns', t(lang, 'campaigns')],
     ['/admin/ledger', t(lang, 'ledger')],
-    ['/admin/reconciliation', t(lang, 'reconciliation')],
-    ['/admin/audit', t(lang, 'audit')],
-  ];
+    canViewControls(user.role) && [
+      '/admin/reconciliation',
+      t(lang, 'reconciliation'),
+    ],
+    canViewControls(user.role) && ['/admin/audit', t(lang, 'audit')],
+  ].filter(Boolean) as [string, string][];
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -611,11 +653,35 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
         <Route path="/" element={<DashboardPage />} />
         <Route
           path="/campaigns"
-          element={<CampaignsPage role={user.role} />}
+          element={
+            canViewCampaigns(user.role) ? (
+              <CampaignsPage role={user.role} />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
         />
         <Route path="/ledger" element={<LedgerPage lang={lang} />} />
-        <Route path="/reconciliation" element={<ReconciliationPage />} />
-        <Route path="/audit" element={<AuditPage />} />
+        <Route
+          path="/reconciliation"
+          element={
+            canViewControls(user.role) ? (
+              <ReconciliationPage />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
+        <Route
+          path="/audit"
+          element={
+            canViewControls(user.role) ? (
+              <AuditPage />
+            ) : (
+              <Navigate to="/admin" replace />
+            )
+          }
+        />
       </Routes>
     </div>
   );
@@ -712,8 +778,28 @@ const CampaignsPage = ({ role }: { role: Role }) => {
   }, []);
 
   const archive = async (id: string) => {
-    await api.archiveCampaign(id);
-    await load();
+    try {
+      await api.archiveCampaign(id);
+      await load();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : 'Archive failed.',
+      );
+    }
+  };
+
+  const deleteCampaign = async (id: string) => {
+    if (!window.confirm('Delete this campaign? Campaigns with donations cannot be deleted.')) {
+      return;
+    }
+    try {
+      await api.deleteCampaign(id);
+      await load();
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error ? requestError.message : 'Delete failed.',
+      );
+    }
   };
 
   return (
@@ -754,7 +840,12 @@ const CampaignsPage = ({ role }: { role: Role }) => {
                       <Button onClick={() => setEditing(campaign)}>Edit</Button>
                     )}
                     {canArchiveCampaigns(role) && (
-                      <Button onClick={() => archive(campaign.id)}>Archive</Button>
+                      <>
+                        <Button onClick={() => archive(campaign.id)}>Archive</Button>
+                        <Button onClick={() => deleteCampaign(campaign.id)}>
+                          Delete
+                        </Button>
+                      </>
                     )}
                   </div>
                 </td>
@@ -894,6 +985,7 @@ const CampaignForm = ({
 
 const LedgerPage = ({ lang }: { lang: Lang }) => {
   const [donations, setDonations] = useState<Donation[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [filters, setFilters] = useState({
     from: '',
     to: '',
@@ -906,6 +998,10 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
     direction: 'desc',
   });
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.campaigns().then(setCampaigns).catch(() => setCampaigns([]));
+  }, []);
 
   const query = useMemo(() => {
     const params = new URLSearchParams();
@@ -922,10 +1018,14 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
       .catch((requestError: Error) => setError(requestError.message));
   }, [query]);
 
-  const totals = donations.reduce(
-    (sum, donation) =>
-      donation.status === 'succeeded' ? sum + donation.amount : sum,
-    0,
+  const totals = donations.reduce<Record<Currency, number>>(
+    (sum, donation) => {
+      if (donation.status === 'succeeded') {
+        sum[donation.currency] += donation.amount;
+      }
+      return sum;
+    },
+    { EUR: 0, USD: 0, GBP: 0 },
   );
 
   const updateFilter = (key: keyof typeof filters, value: string) => {
@@ -943,18 +1043,44 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
           >
             {t(lang, 'exportCsv')}
           </a>
+          <a
+            className="focus-ring rounded-md bg-emerald-700 px-4 py-2 font-semibold text-white"
+            href={api.exportPdfUrl(query)}
+          >
+            {t(lang, 'exportPdf')}
+          </a>
           <Button onClick={() => window.print()}>{t(lang, 'print')}</Button>
         </div>
       </div>
       <section className="mb-4">
         <h3 className="text-xl font-semibold">Donation ledger report</h3>
         <p>Generated: {formatDate(new Date().toISOString())}</p>
-        <p>Total succeeded in filtered rows: {money(totals, 'EUR')}</p>
+        <p>
+          Total succeeded in filtered rows:{' '}
+          {currencies
+            .filter((currency) => totals[currency])
+            .map((currency) => money(totals[currency], currency))
+            .join(' · ') || money(0, 'EUR')}
+        </p>
       </section>
       <div className="no-print grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-4">
         <FilterInput label="From" type="date" value={filters.from} onChange={(value) => updateFilter('from', value)} />
         <FilterInput label="To" type="date" value={filters.to} onChange={(value) => updateFilter('to', value)} />
-        <FilterInput label="Campaign ID" value={filters.campaignId} onChange={(value) => updateFilter('campaignId', value)} />
+        {campaigns.length ? (
+          <label>
+            Campaign
+            <select className="focus-ring mt-1 w-full rounded-md border border-slate-300 p-2" value={filters.campaignId} onChange={(event) => updateFilter('campaignId', event.target.value)}>
+              <option value="">Any</option>
+              {campaigns.map((campaign) => (
+                <option key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <FilterInput label="Campaign ID" value={filters.campaignId} onChange={(value) => updateFilter('campaignId', value)} />
+        )}
         <label>
           Status
           <select className="focus-ring mt-1 w-full rounded-md border border-slate-300 p-2" value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>

@@ -37,7 +37,11 @@ const parseJson = async <T>(response: Response): Promise<T> => {
   const body = (await response.json().catch(() => ({}))) as Json;
   if (!response.ok) {
     const message =
-      typeof body.message === 'string' ? body.message : 'Request failed';
+      typeof body.message === 'string'
+        ? body.message
+        : typeof body.error === 'string'
+          ? body.error
+          : `${response.status} ${response.statusText || 'Request failed'}`;
     throw new Error(message);
   }
   return body as T;
@@ -205,12 +209,18 @@ export const api = {
     request<ApiCampaign>(`/api/admin/campaigns/${id}/archive`, {
       method: 'POST',
     }).then(mapCampaign),
+  deleteCampaign: (id: string) =>
+    request<ApiCampaign>(`/api/admin/campaigns/${id}`, {
+      method: 'DELETE',
+    }).then(mapCampaign),
   donations: (query: URLSearchParams) =>
     request<ApiDonation[]>(`/api/admin/donations?${donationQuery(query)}`).then(
       (donations) => donations.map(mapDonation),
     ),
   exportUrl: (query: URLSearchParams) =>
     `/api/admin/donations/export.csv?${donationQuery(query)}`,
+  exportPdfUrl: (query: URLSearchParams) =>
+    `/api/admin/donations/export.pdf?${donationQuery(query)}`,
   reconciliation: () =>
     request<ApiReconciliationRow[]>('/api/admin/reconciliation').then((rows) =>
       rows.map(mapReconciliation),
