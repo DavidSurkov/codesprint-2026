@@ -9,7 +9,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import { api } from './api';
-import { getInitialLang, t, type Lang } from './i18n';
+import { getInitialLang, t, tx, type Lang } from './i18n';
 import type {
   AuditRow,
   Campaign,
@@ -63,11 +63,10 @@ const canViewCampaigns = (role: Role) => role !== 'auditor';
 
 const canViewControls = (role: Role) => role !== 'volunteer';
 
-const roleLabel = (role: Role) =>
-  role
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
+const enumLabel = (lang: Lang, group: string, value: string) =>
+  tx(lang, `${group}.${value}`, value);
+
+const roleLabel = (lang: Lang, role: Role) => enumLabel(lang, 'role', role);
 
 const useLocalBoolean = (key: string) => {
   const [value, setValue] = useState(() => localStorage.getItem(key) === '1');
@@ -338,10 +337,10 @@ const statusTone = (status: string): Tone => {
   }
 };
 
-const StatusBadge = ({ status }: { status: string }) => (
+const StatusBadge = ({ lang, status }: { lang: Lang; status: string }) => (
   <Badge tone={statusTone(status)}>
     <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
-    {status}
+    {enumLabel(lang, 'status', status)}
   </Badge>
 );
 
@@ -476,8 +475,8 @@ const Shell = ({
                 value={lang}
                 onChange={(event) => setLang(event.target.value as Lang)}
               >
-                <option value="en">English</option>
-                <option value="mt">Malti</option>
+                <option value="en">{t(lang, 'languageEn')}</option>
+                <option value="mt">{t(lang, 'languageMt')}</option>
               </select>
             </label>
             <div className="hidden h-6 w-px bg-slate-200 sm:block" />
@@ -503,7 +502,7 @@ const Shell = ({
       </header>
       <div className="flex-1">{children}</div>
       <footer className="no-print mt-auto border-t border-slate-200/80 py-6 text-center text-sm text-slate-500">
-        Tap For Good · Contactless giving demo
+        Tap For Good · {t(lang, 'contactlessGivingDemo')}
       </footer>
     </div>
   );
@@ -549,21 +548,23 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
   }, []);
 
   const campaign = campaigns.find((item) => item.id === campaignId) || null;
-  const amountError = Number(amount) > 0 ? '' : 'Enter an amount above zero.';
+  const amountError = Number(amount) > 0 ? '' : t(lang, 'amountAboveZero');
   const receiptError =
-    receiptChannel === 'none' || receiptContact ? '' : 'Receipt contact needed.';
+    receiptChannel === 'none' || receiptContact
+      ? ''
+      : t(lang, 'receiptContactError');
   const cardDigits = cardNumber.replace(/\D/g, '');
   const cardError =
     paymentMethod === 'tap'
       ? ''
       : !cardName.trim()
-        ? 'Name on card needed.'
+        ? t(lang, 'nameOnCardError')
         : !/^\d{12,19}$/.test(cardDigits)
-          ? 'Card number must be 12 to 19 digits.'
+          ? t(lang, 'cardNumberError')
           : !/^(0[1-9]|1[0-2])\/\d{2}$/.test(cardExpiry)
-            ? 'Expiry must use MM/YY.'
+            ? t(lang, 'cardExpiryError')
             : !/^\d{3,4}$/.test(cardCvc)
-              ? 'CVC must be 3 or 4 digits.'
+              ? t(lang, 'cardCvcError')
               : '';
   const canSubmit = campaign && !amountError && !receiptError && !cardError;
 
@@ -587,7 +588,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
       navigate(`/donate/confirmation/${donation.id}`);
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Donation failed.',
+        requestError instanceof Error ? requestError.message : t(lang, 'donationFailed'),
       );
     } finally {
       setSubmitting(false);
@@ -599,14 +600,13 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
       <section className="animate-fade-in">
         <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-inset ring-brand-600/20">
           <IconTap className="h-3.5 w-3.5" />
-          Contactless giving
+          {t(lang, 'contactlessGiving')}
         </span>
         <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-          Give in a single tap.
+          {t(lang, 'giveHeadline')}
         </h1>
         <p className="mt-4 max-w-xl text-lg text-slate-600">
-          Choose a campaign, set an amount, and complete a demo card or tap
-          donation in seconds.
+          {t(lang, 'giveIntro')}
         </p>
 
         {campaign ? (
@@ -638,7 +638,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
                     <h2 className="text-xl font-bold text-slate-900">
                       {campaign.name}
                     </h2>
-                    <StatusBadge status={campaign.status} />
+                    <StatusBadge lang={lang} status={campaign.status} />
                   </div>
                   <p className="mt-0.5 text-slate-600">{campaign.cause}</p>
                 </div>
@@ -646,7 +646,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
               <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
                 <span className="flex items-center gap-2 text-sm font-medium text-slate-500">
                   <IconTarget className="h-4 w-4" />
-                  Fundraising goal
+                  {t(lang, 'fundraisingGoal')}
                 </span>
                 <span className="text-lg font-bold text-slate-900">
                   {money(campaign.goalAmount, campaign.currency)}
@@ -657,18 +657,18 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
         ) : (
           <div className="mt-8 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
             <IconAlert className="mt-0.5 h-5 w-5 shrink-0" />
-            <p>No active campaigns are available.</p>
+            <p>{t(lang, 'noActiveCampaigns')}</p>
           </div>
         )}
 
         <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
           <span className="inline-flex items-center gap-2">
             <IconShield className="h-4 w-4 text-brand-600" />
-            Secure demo checkout
+            {t(lang, 'secureDemoCheckout')}
           </span>
           <span className="inline-flex items-center gap-2">
             <IconReceipt className="h-4 w-4 text-brand-600" />
-            Instant receipt
+            {t(lang, 'instantReceipt')}
           </span>
         </div>
       </section>
@@ -676,7 +676,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
       <Card className="animate-scale-in p-6">
         <h2 className="text-xl font-bold text-slate-900">{t(lang, 'donate')}</h2>
         <p className="mt-1 text-sm text-slate-500">
-          Complete the form below to give.
+          {t(lang, 'completeForm')}
         </p>
         <form className="mt-6 grid gap-5" onSubmit={submit}>
           <Field label={t(lang, 'campaign')} htmlFor="donate-campaign">
@@ -747,7 +747,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
           </fieldset>
 
           <fieldset>
-            <legend className="field-label">Payment</legend>
+            <legend className="field-label">{t(lang, 'payment')}</legend>
             <div className="grid grid-cols-2 gap-2">
               {([
                 ['tap', t(lang, 'tap')],
@@ -781,7 +781,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
 
           {paymentMethod === 'card' && (
             <div className="grid gap-4 rounded-xl bg-slate-50 p-4" aria-describedby="card-error">
-              <Field label="Name on card" htmlFor="card-name">
+              <Field label={t(lang, 'nameOnCard')} htmlFor="card-name">
                 <input
                   id="card-name"
                   className="field-input"
@@ -789,7 +789,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
                   onChange={(event) => setCardName(event.target.value)}
                 />
               </Field>
-              <Field label="Card number" htmlFor="card-number">
+              <Field label={t(lang, 'cardNumber')} htmlFor="card-number">
                 <input
                   id="card-number"
                   className="field-input"
@@ -800,16 +800,16 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
                 />
               </Field>
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Expiry" htmlFor="card-expiry">
+                <Field label={t(lang, 'expiry')} htmlFor="card-expiry">
                   <input
                     id="card-expiry"
                     className="field-input"
-                    placeholder="MM/YY"
+                    placeholder={t(lang, 'expiryPlaceholder')}
                     value={cardExpiry}
                     onChange={(event) => setCardExpiry(event.target.value)}
                   />
                 </Field>
-                <Field label="CVC" htmlFor="card-cvc">
+                <Field label={t(lang, 'cvc')} htmlFor="card-cvc">
                   <input
                     id="card-cvc"
                     className="field-input"
@@ -843,7 +843,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
                     checked={receiptChannel === item}
                     onChange={() => setReceiptChannel(item)}
                   />
-                  {item}
+                  {enumLabel(lang, 'channel', item)}
                 </label>
               ))}
             </div>
@@ -866,7 +866,7 @@ const DonorHome = ({ lang }: { lang: Lang }) => {
             {isSubmitting ? (
               <>
                 <Spinner className="h-4 w-4" />
-                Sending...
+                {t(lang, 'sending')}
               </>
             ) : (
               t(lang, 'submit')
@@ -899,24 +899,32 @@ const Confirmation = ({ lang }: { lang: Lang }) => {
 
   const details: [string, React.ReactNode][] = donation
     ? [
-        ['Donation ID', <span className="font-mono text-sm">{donation.id}</span>],
-        ['Status', <StatusBadge status={donation.status} />],
+        [t(lang, 'donationId'), <span className="font-mono text-sm">{donation.id}</span>],
+        [t(lang, 'status'), <StatusBadge lang={lang} status={donation.status} />],
         [t(lang, 'amount'), money(donation.amount, donation.currency)],
         [t(lang, 'campaign'), donation.campaignName || donation.campaignId],
-        ['Date', formatDate(donation.createdAt)],
-        ['Payment', <span className="capitalize">{donation.paymentMethod}</span>],
+        [t(lang, 'date'), formatDate(donation.createdAt)],
+        [
+          t(lang, 'payment'),
+          <span>{enumLabel(lang, 'payment', donation.paymentMethod)}</span>,
+        ],
         [
           t(lang, 'receipt'),
-          `${donation.receiptState || donation.receiptChannel || 'none'}${
-            donation.maskedReceiptContact
+          <>
+            {enumLabel(
+              lang,
+              donation.receiptState ? 'status' : 'channel',
+              donation.receiptState || donation.receiptChannel || 'none',
+            )}
+            {donation.maskedReceiptContact
               ? ` · ${donation.maskedReceiptContact}`
-              : ''
-          }`,
+              : ''}
+          </>,
         ],
         ...(donation.mastercardTransactionId
           ? ([
               [
-                'Mastercard ID',
+                t(lang, 'mastercardId'),
                 <span className="font-mono text-sm">
                   {donation.mastercardTransactionId}
                 </span>,
@@ -945,7 +953,7 @@ const Confirmation = ({ lang }: { lang: Lang }) => {
             {t(lang, 'confirmation')}
           </h1>
           <p className="mt-1 text-slate-600" aria-live="polite">
-            {error || (donation ? t(lang, 'donated') : 'Loading...')}
+            {error || (donation ? t(lang, 'donated') : t(lang, 'loading'))}
           </p>
         </div>
 
@@ -964,7 +972,7 @@ const Confirmation = ({ lang }: { lang: Lang }) => {
 
         <div className="flex flex-wrap items-center gap-3 px-6 py-5">
           <Link className={linkButtonClass} to="/">
-            Make another donation
+            {t(lang, 'makeAnotherDonation')}
           </Link>
           {donation?.receiptState === 'queued' && (
             <Button variant="secondary" onClick={() => window.print()}>
@@ -996,7 +1004,7 @@ const Login = ({ lang }: { lang: Lang }) => {
       navigate('/admin');
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Login failed.',
+        requestError instanceof Error ? requestError.message : t(lang, 'loginFailed'),
       );
     }
   };
@@ -1011,7 +1019,7 @@ const Login = ({ lang }: { lang: Lang }) => {
           {t(lang, 'login')}
         </h1>
         <p className="mt-1 text-sm text-slate-500">
-          Sign in to the {t(lang, 'admin').toLowerCase()} console.
+          {t(lang, 'signInAdmin')}
         </p>
       </div>
       <Card className="animate-scale-in p-6">
@@ -1082,7 +1090,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
     return (
       <main className="flex items-center justify-center gap-3 p-16 text-slate-500">
         <Spinner className="h-5 w-5" />
-        Loading...
+        {t(lang, 'loading')}
       </main>
     );
   if (!user) return <Navigate to="/admin/login" replace />;
@@ -1110,7 +1118,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
               {t(lang, 'admin')}
             </h1>
             <p className="text-sm text-slate-500">
-              {user.name} · {roleLabel(user.role)}
+              {user.name} · {roleLabel(lang, user.role)}
             </p>
           </div>
         </div>
@@ -1120,7 +1128,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
       </div>
       <nav
         className="no-print mb-6 flex flex-wrap gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-card"
-        aria-label="Admin"
+        aria-label={t(lang, 'admin')}
       >
         {links.map((link) => {
           const NavIcon = navIcons[link[0]];
@@ -1145,12 +1153,12 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
         })}
       </nav>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<DashboardPage lang={lang} />} />
         <Route
           path="/campaigns"
           element={
             canViewCampaigns(user.role) ? (
-              <CampaignsPage role={user.role} />
+              <CampaignsPage lang={lang} role={user.role} />
             ) : (
               <Navigate to="/admin" replace />
             )
@@ -1161,7 +1169,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
           path="/reconciliation"
           element={
             canViewControls(user.role) ? (
-              <ReconciliationPage />
+              <ReconciliationPage lang={lang} />
             ) : (
               <Navigate to="/admin" replace />
             )
@@ -1171,7 +1179,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
           path="/audit"
           element={
             canViewControls(user.role) ? (
-              <AuditPage />
+              <AuditPage lang={lang} />
             ) : (
               <Navigate to="/admin" replace />
             )
@@ -1186,7 +1194,7 @@ const AdminShell = ({ lang }: { lang: Lang }) => {
 /* Dashboard                                                           */
 /* ------------------------------------------------------------------ */
 
-const DashboardPage = () => {
+const DashboardPage = ({ lang }: { lang: Lang }) => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [campaignId, setCampaignId] = useState('');
   const [dashboard, setDashboard] = useState<Dashboard>(emptyDashboard);
@@ -1217,16 +1225,16 @@ const DashboardPage = () => {
   return (
     <main>
       <PageHeading
-        title="Dashboard"
+        title={t(lang, 'dashboard')}
         actions={
           <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
-            Campaign
+            {t(lang, 'campaign')}
             <select
               className="focus-ring rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:border-slate-400"
               value={campaignId}
               onChange={(event) => setCampaignId(event.target.value)}
             >
-              <option value="">All campaigns</option>
+              <option value="">{t(lang, 'allCampaigns')}</option>
               {campaigns.map((campaign) => (
                 <option key={campaign.id} value={campaign.id}>
                   {campaign.name}
@@ -1238,25 +1246,25 @@ const DashboardPage = () => {
       />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Metric
-          label="Raised EUR"
+          label={t(lang, 'raisedEur')}
           value={money(dashboard.totalRaisedEur, 'EUR')}
           icon={<IconCoins className="h-5 w-5" />}
           tone="brand"
         />
         <Metric
-          label="Successful"
+          label={t(lang, 'successful')}
           value={dashboard.successfulDonationCount}
           icon={<IconCheckCircle className="h-5 w-5" />}
           tone="green"
         />
         <Metric
-          label="Average EUR"
+          label={t(lang, 'averageEur')}
           value={money(dashboard.averageEurDonation, 'EUR')}
           icon={<IconTrend className="h-5 w-5" />}
           tone="blue"
         />
         <Metric
-          label="Progress"
+          label={t(lang, 'progress')}
           value={`${dashboard.progressVsGoal}%`}
           icon={<IconTarget className="h-5 w-5" />}
           tone="amber"
@@ -1264,7 +1272,9 @@ const DashboardPage = () => {
         />
       </div>
       <Card className="mt-5 p-6">
-        <h3 className="text-lg font-bold text-slate-900">Currency breakdown</h3>
+        <h3 className="text-lg font-bold text-slate-900">
+          {t(lang, 'currencyBreakdown')}
+        </h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-3">
           {currencies.map((currency) => (
             <div
@@ -1329,7 +1339,7 @@ const Metric = ({
 /* Campaigns                                                           */
 /* ------------------------------------------------------------------ */
 
-const CampaignsPage = ({ role }: { role: Role }) => {
+const CampaignsPage = ({ lang, role }: { lang: Lang; role: Role }) => {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [editing, setEditing] = useState<Campaign | null>(null);
   const [error, setError] = useState('');
@@ -1346,13 +1356,13 @@ const CampaignsPage = ({ role }: { role: Role }) => {
       await load();
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Archive failed.',
+        requestError instanceof Error ? requestError.message : t(lang, 'archiveFailed'),
       );
     }
   };
 
   const deleteCampaign = async (id: string) => {
-    if (!window.confirm('Delete this campaign? Campaigns with donations cannot be deleted.')) {
+    if (!window.confirm(t(lang, 'deleteCampaignConfirm'))) {
       return;
     }
     try {
@@ -1360,17 +1370,18 @@ const CampaignsPage = ({ role }: { role: Role }) => {
       await load();
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Delete failed.',
+        requestError instanceof Error ? requestError.message : t(lang, 'deleteFailed'),
       );
     }
   };
 
   return (
     <main>
-      <PageHeading title="Campaigns" />
+      <PageHeading title={t(lang, 'campaigns')} />
       {canEditCampaigns(role) && (
         <CampaignForm
           campaign={editing}
+          lang={lang}
           onSaved={() => {
             setEditing(null);
             load().catch((requestError: Error) => setError(requestError.message));
@@ -1382,7 +1393,13 @@ const CampaignsPage = ({ role }: { role: Role }) => {
           <table className="w-full border-collapse text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
-                {['Name', 'Cause', 'Status', 'Goal', 'Actions'].map((head) => (
+                {[
+                  t(lang, 'name'),
+                  t(lang, 'cause'),
+                  t(lang, 'status'),
+                  t(lang, 'goal'),
+                  t(lang, 'actions'),
+                ].map((head) => (
                   <th
                     key={head}
                     className="px-4 py-3 font-semibold text-slate-500"
@@ -1394,7 +1411,7 @@ const CampaignsPage = ({ role }: { role: Role }) => {
             </thead>
             <tbody>
               {campaigns.length === 0 && (
-                <EmptyRow colSpan={5} label="No campaigns yet." />
+                <EmptyRow colSpan={5} label={t(lang, 'noCampaigns')} />
               )}
               {campaigns.map((campaign) => (
                 <tr
@@ -1415,7 +1432,7 @@ const CampaignsPage = ({ role }: { role: Role }) => {
                   </td>
                   <td className="px-4 py-3 text-slate-600">{campaign.cause}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={campaign.status} />
+                    <StatusBadge lang={lang} status={campaign.status} />
                   </td>
                   <td className="px-4 py-3 font-medium text-slate-900">
                     {money(campaign.goalAmount, campaign.currency)}
@@ -1428,7 +1445,7 @@ const CampaignsPage = ({ role }: { role: Role }) => {
                           size="sm"
                           onClick={() => setEditing(campaign)}
                         >
-                          Edit
+                          {t(lang, 'edit')}
                         </Button>
                       )}
                       {canArchiveCampaigns(role) && (
@@ -1438,14 +1455,14 @@ const CampaignsPage = ({ role }: { role: Role }) => {
                             size="sm"
                             onClick={() => archive(campaign.id)}
                           >
-                            Archive
+                            {t(lang, 'archive')}
                           </Button>
                           <Button
                             variant="danger"
                             size="sm"
                             onClick={() => deleteCampaign(campaign.id)}
                           >
-                            Delete
+                            {t(lang, 'delete')}
                           </Button>
                         </>
                       )}
@@ -1464,9 +1481,11 @@ const CampaignsPage = ({ role }: { role: Role }) => {
 
 const CampaignForm = ({
   campaign,
+  lang,
   onSaved,
 }: {
   campaign: Campaign | null;
+  lang: Lang;
   onSaved: () => void;
 }) => {
   const [name, setName] = useState('');
@@ -1503,7 +1522,7 @@ const CampaignForm = ({
       onSaved();
     } catch (requestError) {
       setError(
-        requestError instanceof Error ? requestError.message : 'Save failed.',
+        requestError instanceof Error ? requestError.message : t(lang, 'saveFailed'),
       );
     }
   };
@@ -1511,10 +1530,10 @@ const CampaignForm = ({
   return (
     <Card className="p-6">
       <h3 className="text-lg font-bold text-slate-900">
-        {campaign ? 'Edit campaign' : 'New campaign'}
+        {campaign ? t(lang, 'editCampaign') : t(lang, 'newCampaign')}
       </h3>
       <form className="mt-4 grid gap-4 md:grid-cols-3" onSubmit={submit}>
-        <Field label="Name" htmlFor="campaign-name">
+        <Field label={t(lang, 'name')} htmlFor="campaign-name">
           <input
             id="campaign-name"
             className="field-input"
@@ -1523,7 +1542,7 @@ const CampaignForm = ({
             onChange={(event) => setName(event.target.value)}
           />
         </Field>
-        <Field label="Cause" htmlFor="campaign-cause">
+        <Field label={t(lang, 'cause')} htmlFor="campaign-cause">
           <input
             id="campaign-cause"
             className="field-input"
@@ -1532,7 +1551,7 @@ const CampaignForm = ({
             onChange={(event) => setCause(event.target.value)}
           />
         </Field>
-        <Field label="Goal" htmlFor="campaign-goal">
+        <Field label={t(lang, 'goal')} htmlFor="campaign-goal">
           <input
             id="campaign-goal"
             className="field-input"
@@ -1542,7 +1561,7 @@ const CampaignForm = ({
             onChange={(event) => setGoalAmount(event.target.value)}
           />
         </Field>
-        <Field label="Currency" htmlFor="campaign-currency">
+        <Field label={t(lang, 'currency')} htmlFor="campaign-currency">
           <select
             id="campaign-currency"
             className="field-input"
@@ -1554,7 +1573,7 @@ const CampaignForm = ({
             ))}
           </select>
         </Field>
-        <Field label="Status" htmlFor="campaign-status">
+        <Field label={t(lang, 'status')} htmlFor="campaign-status">
           <select
             id="campaign-status"
             className="field-input"
@@ -1562,11 +1581,13 @@ const CampaignForm = ({
             onChange={(event) => setStatus(event.target.value)}
           >
             {['draft', 'active', 'ended', 'archived'].map((item) => (
-              <option key={item}>{item}</option>
+              <option key={item} value={item}>
+                {enumLabel(lang, 'status', item)}
+              </option>
             ))}
           </select>
         </Field>
-        <Field label="Color" htmlFor="campaign-color">
+        <Field label={t(lang, 'color')} htmlFor="campaign-color">
           <input
             id="campaign-color"
             className="focus-ring h-[46px] w-full cursor-pointer rounded-xl border border-slate-300 bg-white p-1 shadow-sm"
@@ -1577,7 +1598,7 @@ const CampaignForm = ({
         </Field>
         <div className="md:col-span-3">
           <Button type="submit">
-            {campaign ? 'Save campaign' : 'Create campaign'}
+            {campaign ? t(lang, 'saveCampaign') : t(lang, 'createCampaign')}
           </Button>
           <p className="mt-2 text-sm text-red-700" aria-live="polite">
             {error}
@@ -1653,13 +1674,13 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
       />
       <Card className="mb-4 p-5">
         <h3 className="text-base font-bold text-slate-900">
-          Donation ledger report
+          {t(lang, 'donationLedgerReport')}
         </h3>
         <p className="mt-1 text-sm text-slate-500">
-          Generated: {formatDate(new Date().toISOString())}
+          {t(lang, 'generated')}: {formatDate(new Date().toISOString())}
         </p>
         <p className="mt-2 text-sm text-slate-700">
-          <span className="font-medium">Total succeeded in filtered rows:</span>{' '}
+          <span className="font-medium">{t(lang, 'totalSucceeded')}</span>{' '}
           {currencies
             .filter((currency) => totals[currency])
             .map((currency) => money(totals[currency], currency))
@@ -1667,12 +1688,12 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
         </p>
       </Card>
       <div className="no-print mb-4 grid gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card md:grid-cols-4">
-        <FilterInput label="From" type="date" value={filters.from} onChange={(value) => updateFilter('from', value)} />
-        <FilterInput label="To" type="date" value={filters.to} onChange={(value) => updateFilter('to', value)} />
+        <FilterInput label={t(lang, 'from')} type="date" value={filters.from} onChange={(value) => updateFilter('from', value)} />
+        <FilterInput label={t(lang, 'to')} type="date" value={filters.to} onChange={(value) => updateFilter('to', value)} />
         {campaigns.length ? (
-          <Field label="Campaign">
+          <Field label={t(lang, 'campaign')}>
             <select className="field-input" value={filters.campaignId} onChange={(event) => updateFilter('campaignId', event.target.value)}>
-              <option value="">Any</option>
+              <option value="">{t(lang, 'any')}</option>
               {campaigns.map((campaign) => (
                 <option key={campaign.id} value={campaign.id}>
                   {campaign.name}
@@ -1681,31 +1702,35 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
             </select>
           </Field>
         ) : (
-          <FilterInput label="Campaign ID" value={filters.campaignId} onChange={(value) => updateFilter('campaignId', value)} />
+          <FilterInput label={t(lang, 'campaignId')} value={filters.campaignId} onChange={(value) => updateFilter('campaignId', value)} />
         )}
-        <Field label="Status">
+        <Field label={t(lang, 'status')}>
           <select className="field-input" value={filters.status} onChange={(event) => updateFilter('status', event.target.value)}>
-            <option value="">Any</option>
-            {statuses.map((status) => <option key={status}>{status}</option>)}
+            <option value="">{t(lang, 'any')}</option>
+            {statuses.map((status) => (
+              <option key={status} value={status}>
+                {enumLabel(lang, 'status', status)}
+              </option>
+            ))}
           </select>
         </Field>
-        <Field label="Currency">
+        <Field label={t(lang, 'currency')}>
           <select className="field-input" value={filters.currency} onChange={(event) => updateFilter('currency', event.target.value)}>
-            <option value="">Any</option>
+            <option value="">{t(lang, 'any')}</option>
             {currencies.map((currency) => <option key={currency}>{currency}</option>)}
           </select>
         </Field>
-        <FilterInput label="Min amount" type="number" value={filters.minAmount} onChange={(value) => updateFilter('minAmount', value)} />
-        <FilterInput label="Max amount" type="number" value={filters.maxAmount} onChange={(value) => updateFilter('maxAmount', value)} />
-        <Field label="Sort">
+        <FilterInput label={t(lang, 'minAmount')} type="number" value={filters.minAmount} onChange={(value) => updateFilter('minAmount', value)} />
+        <FilterInput label={t(lang, 'maxAmount')} type="number" value={filters.maxAmount} onChange={(value) => updateFilter('maxAmount', value)} />
+        <Field label={t(lang, 'sort')}>
           <select className="field-input" value={filters.sort} onChange={(event) => updateFilter('sort', event.target.value)}>
-            <option value="createdAt">Date</option>
-            <option value="amount">Amount</option>
-            <option value="status">Status</option>
+            <option value="createdAt">{t(lang, 'date')}</option>
+            <option value="amount">{t(lang, 'amount')}</option>
+            <option value="status">{t(lang, 'status')}</option>
           </select>
         </Field>
       </div>
-      <DonationTable donations={donations} />
+      <DonationTable donations={donations} lang={lang} />
       <ErrorAlert error={error} />
     </main>
   );
@@ -1732,21 +1757,27 @@ const FilterInput = ({
   </Field>
 );
 
-const DonationTable = ({ donations }: { donations: Donation[] }) => (
+const DonationTable = ({
+  donations,
+  lang,
+}: {
+  donations: Donation[];
+  lang: Lang;
+}) => (
   <Card className="overflow-hidden p-0">
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
             {[
-              'Date',
-              'Donation ID',
-              'Campaign',
-              'Amount',
-              'Method',
-              'Status',
-              'Mastercard ID',
-              'Receipt',
+              t(lang, 'date'),
+              t(lang, 'donationId'),
+              t(lang, 'campaign'),
+              t(lang, 'amount'),
+              t(lang, 'method'),
+              t(lang, 'status'),
+              t(lang, 'mastercardId'),
+              t(lang, 'receipt'),
             ].map((head) => (
               <th key={head} className="px-4 py-3 font-semibold text-slate-500">
                 {head}
@@ -1756,7 +1787,7 @@ const DonationTable = ({ donations }: { donations: Donation[] }) => (
         </thead>
         <tbody>
           {donations.length === 0 && (
-            <EmptyRow colSpan={8} label="No donations match these filters." />
+            <EmptyRow colSpan={8} label={t(lang, 'noDonations')} />
           )}
           {donations.map((donation) => (
             <tr
@@ -1776,16 +1807,16 @@ const DonationTable = ({ donations }: { donations: Donation[] }) => (
                 {money(donation.amount, donation.currency)}
               </td>
               <td className="px-4 py-3 capitalize text-slate-600">
-                {donation.paymentMethod}
+                {enumLabel(lang, 'payment', donation.paymentMethod)}
               </td>
               <td className="px-4 py-3">
-                <StatusBadge status={donation.status} />
+                <StatusBadge lang={lang} status={donation.status} />
               </td>
               <td className="px-4 py-3 font-mono text-xs text-slate-500">
                 {donation.mastercardTransactionId || '-'}
               </td>
               <td className="px-4 py-3 text-slate-600">
-                {donation.receiptChannel || 'none'}{' '}
+                {enumLabel(lang, 'channel', donation.receiptChannel || 'none')}{' '}
                 {donation.maskedReceiptContact || ''}
               </td>
             </tr>
@@ -1800,7 +1831,7 @@ const DonationTable = ({ donations }: { donations: Donation[] }) => (
 /* Reconciliation & Audit                                              */
 /* ------------------------------------------------------------------ */
 
-const ReconciliationPage = () => {
+const ReconciliationPage = ({ lang }: { lang: Lang }) => {
   const [rows, setRows] = useState<ReconciliationRow[]>([]);
   const [error, setError] = useState('');
 
@@ -1813,17 +1844,17 @@ const ReconciliationPage = () => {
 
   return (
     <AdminTable
-      title="Reconciliation"
+      title={t(lang, 'reconciliation')}
       heads={[
-        'Donation',
-        'Campaign',
-        'Amount',
-        'Donation status',
-        'Mastercard ID',
-        'Mastercard status',
-        'Match',
-        'Source',
-        'Created',
+        t(lang, 'donation'),
+        t(lang, 'campaign'),
+        t(lang, 'amount'),
+        t(lang, 'donationStatus'),
+        t(lang, 'mastercardId'),
+        t(lang, 'mastercardStatus'),
+        t(lang, 'match'),
+        t(lang, 'source'),
+        t(lang, 'created'),
       ]}
       rows={rows.map((row) => ({
         id: row.id,
@@ -1833,22 +1864,23 @@ const ReconciliationPage = () => {
           <span className="font-medium text-slate-900">
             {money(row.amount, row.currency)}
           </span>,
-          <StatusBadge status={row.donationStatus} />,
+          <StatusBadge lang={lang} status={row.donationStatus} />,
           <span className="font-mono text-xs text-slate-500">
             {row.mastercardTransactionId}
           </span>,
-          row.mastercardStatus,
-          <StatusBadge status={row.matchState} />,
+          enumLabel(lang, 'status', row.mastercardStatus),
+          <StatusBadge lang={lang} status={row.matchState} />,
           row.source,
           formatDate(row.createdAt),
         ],
       }))}
       error={error}
+      lang={lang}
     />
   );
 };
 
-const AuditPage = () => {
+const AuditPage = ({ lang }: { lang: Lang }) => {
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [error, setError] = useState('');
 
@@ -1861,19 +1893,26 @@ const AuditPage = () => {
 
   return (
     <AdminTable
-      title="Audit"
-      heads={['Created', 'Actor', 'Action', 'Entity type', 'Entity ID']}
+      title={t(lang, 'audit')}
+      heads={[
+        t(lang, 'created'),
+        t(lang, 'actor'),
+        t(lang, 'actions'),
+        t(lang, 'entityType'),
+        t(lang, 'entityId'),
+      ]}
       rows={rows.map((row) => ({
         id: row.id,
         cells: [
           formatDate(row.createdAt),
-          row.actorName,
-          <Badge tone="blue">{row.action}</Badge>,
-          row.entityType,
+          row.actorName === 'System' ? t(lang, 'system') : row.actorName,
+          <Badge tone="blue">{enumLabel(lang, 'action', row.action)}</Badge>,
+          enumLabel(lang, 'entity', row.entityType),
           <span className="font-mono text-xs text-slate-500">{row.entityId}</span>,
         ],
       }))}
       error={error}
+      lang={lang}
     />
   );
 };
@@ -1881,11 +1920,13 @@ const AuditPage = () => {
 const AdminTable = ({
   title,
   heads,
+  lang,
   rows,
   error,
 }: {
   title: string;
   heads: string[];
+  lang: Lang;
   rows: { id: string; cells: React.ReactNode[] }[];
   error: string;
 }) => (
@@ -1908,7 +1949,7 @@ const AdminTable = ({
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <EmptyRow colSpan={heads.length} label="Nothing to show yet." />
+              <EmptyRow colSpan={heads.length} label={t(lang, 'nothingToShow')} />
             )}
             {rows.map((row) => (
               <tr
