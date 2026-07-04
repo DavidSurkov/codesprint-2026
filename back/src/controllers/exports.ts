@@ -3,7 +3,7 @@ import {
   httpError,
   type Context,
 } from '../http.js';
-import { buildCsv, buildPdf } from '../reporting.js';
+import { buildCsv, buildPdf } from '../services/reporting.js';
 import { ok } from '../result.js';
 import { getRequestUser } from '../services/admin.js';
 import { audit } from '../services/audit.js';

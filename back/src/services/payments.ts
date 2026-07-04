@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { MastercardSource, type DonationStatus } from '@prisma/client';
-import type { DonationInput } from '../shared/dto.js';
-import { createLogger } from './logger.js';
+import type { DonationInput } from '../../shared/dto.js';
+import { createLogger } from '../logger.js';
 
 const logger = createLogger('payments');
 

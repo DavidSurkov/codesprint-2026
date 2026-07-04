@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '../db.js';
+import { prisma } from '../db/index.js';
 
 export const audit = async (
   requestId: string,

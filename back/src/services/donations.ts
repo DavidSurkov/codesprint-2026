@@ -1,8 +1,8 @@
 import type { DonationStatus, Prisma } from '@prisma/client';
 import type { DonationInput } from '../../shared/dto.js';
 import type { donationQuerySchema } from '../../shared/dto.js';
-import { prisma } from '../db.js';
-import { processDonation } from '../payments.js';
+import { prisma } from '../db/index.js';
+import { processDonation } from './payments.js';
 import { audit } from './audit.js';
 
 const eurRate: Record<string, number> = {

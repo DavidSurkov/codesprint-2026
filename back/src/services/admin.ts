@@ -4,7 +4,7 @@ import {
   deleteSession,
   getUserFromRequest,
 } from '../auth.js';
-import { prisma } from '../db.js';
+import { prisma } from '../db/index.js';
 
 export const getUserByEmail = (email: string) =>
   prisma.user.findUnique({ where: { email } });

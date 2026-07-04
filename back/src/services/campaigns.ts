@@ -4,7 +4,7 @@ import type {
   campaignPatchSchema,
 } from '../../shared/dto.js';
 import type { z } from 'zod';
-import { prisma } from '../db.js';
+import { prisma } from '../db/index.js';
 
 type CampaignInput = z.infer<typeof campaignInputSchema>;
 type CampaignPatch = z.infer<typeof campaignPatchSchema>;
