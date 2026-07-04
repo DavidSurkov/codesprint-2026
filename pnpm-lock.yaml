@@ -13,6 +13,9 @@ importers:
       '@prisma/client':
         specifier: ^6.10.1
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      mastercard-oauth1-signer:
+        specifier: ^1.2.0
+        version: 1.2.0
       pg:
         specifier: ^8.16.3
         version: 8.22.0
@@ -973,6 +976,9 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  mastercard-oauth1-signer@1.2.0:
+    resolution: {integrity: sha512-JQV9W8O0LlcWQtImLDCodK5oVRL7uW9JiQyCmw68thuJku0WrltdMjk34KOGcfqHGDnVmOkqyBise3nuwnvwGg==}
 
   merge2@1.4.1:
     resolution: {integrity: sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==}
@@ -2085,6 +2091,8 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  mastercard-oauth1-signer@1.2.0: {}
 
   merge2@1.4.1: {}
 
