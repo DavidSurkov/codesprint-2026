@@ -31,7 +31,10 @@ type ApiAuditRow = Json & {
   entity?: string;
   user?: { name?: string; email?: string };
 };
+type DonationFilters = Record<string, string>;
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '';
+
+const apiUrl = (path: string) => `${apiBaseUrl}${path}`;
 
 const parseJson = async <T>(response: Response): Promise<T> => {
   const body = (await response.json().catch(() => ({}))) as Json;
@@ -52,7 +55,7 @@ const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
   if (init?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetch(apiUrl(path), {
     credentials: 'include',
     ...init,
     headers,
@@ -132,17 +135,26 @@ const donationBody = (body: Json) => {
   };
 };
 
-const campaignBody = (body: Json) => ({
-  ...body,
-  description: String(body.cause ?? body.name ?? 'Campaign'),
-  goalAmountCents: toCents(body.goalAmount),
-  goalAmount: undefined,
-  suggestedAmounts: [10, 25, 50].map(toCents),
-  startsAt: new Date().toISOString(),
-});
+const campaignBody = (body: Json, withDefaults = false) => {
+  const suggestedAmounts = Array.isArray(body.suggestedAmounts)
+    ? body.suggestedAmounts.map(toCents)
+    : [10, 25, 50].map(toCents);
 
-const donationQuery = (query: URLSearchParams) => {
-  const params = new URLSearchParams(query);
+  return {
+    ...body,
+    description: String(body.cause ?? body.name ?? 'Campaign'),
+    goalAmountCents: toCents(body.goalAmount),
+    goalAmount: undefined,
+    suggestedAmounts,
+    startsAt: withDefaults ? new Date().toISOString() : undefined,
+  };
+};
+
+const donationQuery = (filters: DonationFilters) => {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) params.set(key, value);
+  }
   const amountKeys = [
     ['minAmount', 'minAmountCents'],
     ['maxAmount', 'maxAmountCents'],
@@ -163,7 +175,7 @@ const donationQuery = (query: URLSearchParams) => {
       params.set(key, new Date(`${value}T00:00:00`).toISOString());
     }
   }
-  return params;
+  return params.toString();
 };
 
 export const api = {
@@ -198,7 +210,7 @@ export const api = {
   createCampaign: (body: Json) =>
     request<ApiCampaign>('/api/admin/campaigns', {
       method: 'POST',
-      body: JSON.stringify(campaignBody(body)),
+      body: JSON.stringify(campaignBody(body, true)),
     }).then(mapCampaign),
   updateCampaign: (id: string, body: Json) =>
     request<ApiCampaign>(`/api/admin/campaigns/${id}`, {
@@ -213,14 +225,14 @@ export const api = {
     request<ApiCampaign>(`/api/admin/campaigns/${id}`, {
       method: 'DELETE',
     }).then(mapCampaign),
-  donations: (query: URLSearchParams) =>
-    request<ApiDonation[]>(`/api/admin/donations?${donationQuery(query)}`).then(
+  donations: (filters: DonationFilters) =>
+    request<ApiDonation[]>(`/api/admin/donations?${donationQuery(filters)}`).then(
       (donations) => donations.map(mapDonation),
     ),
-  exportUrl: (query: URLSearchParams) =>
-    `/api/admin/donations/export.csv?${donationQuery(query)}`,
-  exportPdfUrl: (query: URLSearchParams) =>
-    `/api/admin/donations/export.pdf?${donationQuery(query)}`,
+  exportUrl: (filters: DonationFilters) =>
+    apiUrl(`/api/admin/donations/export.csv?${donationQuery(filters)}`),
+  exportPdfUrl: (filters: DonationFilters) =>
+    apiUrl(`/api/admin/donations/export.pdf?${donationQuery(filters)}`),
   reconciliation: () =>
     request<ApiReconciliationRow[]>('/api/admin/reconciliation').then((rows) =>
       rows.map(mapReconciliation),

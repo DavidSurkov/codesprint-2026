@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Link,
   Navigate,
@@ -1003,20 +1003,12 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
     api.campaigns().then(setCampaigns).catch(() => setCampaigns([]));
   }, []);
 
-  const query = useMemo(() => {
-    const params = new URLSearchParams();
-    for (const [key, value] of Object.entries(filters)) {
-      if (value) params.set(key, value);
-    }
-    return params;
-  }, [filters]);
-
   useEffect(() => {
     api
-      .donations(query)
+      .donations(filters)
       .then(setDonations)
       .catch((requestError: Error) => setError(requestError.message));
-  }, [query]);
+  }, [filters]);
 
   const totals = donations.reduce<Record<Currency, number>>(
     (sum, donation) => {
@@ -1039,13 +1031,13 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
         <div className="no-print flex gap-2">
           <a
             className="focus-ring rounded-md bg-emerald-700 px-4 py-2 font-semibold text-white"
-            href={api.exportUrl(query)}
+            href={api.exportUrl(filters)}
           >
             {t(lang, 'exportCsv')}
           </a>
           <a
             className="focus-ring rounded-md bg-emerald-700 px-4 py-2 font-semibold text-white"
-            href={api.exportPdfUrl(query)}
+            href={api.exportPdfUrl(filters)}
           >
             {t(lang, 'exportPdf')}
           </a>
@@ -1213,17 +1205,20 @@ const ReconciliationPage = () => {
         'Source',
         'Created',
       ]}
-      rows={rows.map((row) => [
-        row.donationId,
-        row.campaignName,
-        money(row.amount, row.currency),
-        row.donationStatus,
-        row.mastercardTransactionId,
-        row.mastercardStatus,
-        row.matchState,
-        row.source,
-        formatDate(row.createdAt),
-      ])}
+      rows={rows.map((row) => ({
+        id: row.id,
+        cells: [
+          row.donationId,
+          row.campaignName,
+          money(row.amount, row.currency),
+          row.donationStatus,
+          row.mastercardTransactionId,
+          row.mastercardStatus,
+          row.matchState,
+          row.source,
+          formatDate(row.createdAt),
+        ],
+      }))}
       error={error}
     />
   );
@@ -1244,13 +1239,16 @@ const AuditPage = () => {
     <AdminTable
       title="Audit"
       heads={['Created', 'Actor', 'Action', 'Entity type', 'Entity ID']}
-      rows={rows.map((row) => [
-        formatDate(row.createdAt),
-        row.actorName,
-        row.action,
-        row.entityType,
-        row.entityId,
-      ])}
+      rows={rows.map((row) => ({
+        id: row.id,
+        cells: [
+          formatDate(row.createdAt),
+          row.actorName,
+          row.action,
+          row.entityType,
+          row.entityId,
+        ],
+      }))}
       error={error}
     />
   );
@@ -1264,7 +1262,7 @@ const AdminTable = ({
 }: {
   title: string;
   heads: string[];
-  rows: string[][];
+  rows: { id: string; cells: string[] }[];
   error: string;
 }) => (
   <main>
@@ -1282,9 +1280,9 @@ const AdminTable = ({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row.join('|')}>
-              {row.map((cell) => (
-                <td key={cell} className="border-b border-slate-100 p-3">
+            <tr key={row.id}>
+              {row.cells.map((cell, index) => (
+                <td key={index} className="border-b border-slate-100 p-3">
                   {cell}
                 </td>
               ))}

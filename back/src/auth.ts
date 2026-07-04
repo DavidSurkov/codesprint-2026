@@ -15,7 +15,11 @@ export const verifyPassword = (password: string, stored: string) => {
   const [salt, expected] = stored.split(':');
   if (!salt || !expected) return false;
   const actual = scryptSync(password, salt, 64);
-  return timingSafeEqual(actual, Buffer.from(expected, 'hex'));
+  const expectedBuffer = Buffer.from(expected, 'hex');
+  return (
+    expectedBuffer.length === actual.length &&
+    timingSafeEqual(actual, expectedBuffer)
+  );
 };
 
 export const hashToken = (token: string) =>

@@ -20,6 +20,7 @@ import {
 } from "./auth.js";
 import { createLogger } from "./logger.js";
 import { processDonation } from "./payments.js";
+import { buildCsv, buildPdf } from "./reporting.js";
 
 const prisma = new PrismaClient();
 const logger = createLogger("http");
@@ -139,6 +140,8 @@ const receiptMask = (contact: string | undefined, channel: string) => {
 const toEurCents = (amountCents: number, currency: string) =>
   Math.round(amountCents * (eurRate[currency] ?? 1));
 
+type DonationQuery = ReturnType<typeof donationQuerySchema.parse>;
+
 const createDonation = async (context: Context) => {
   const input = await parseBody(context.request, donationInputSchema);
   if (input.paymentMethod === "card" && !input.card) {
@@ -214,45 +217,49 @@ const createDonation = async (context: Context) => {
   return updated;
 };
 
-const donationWhere = (params: URLSearchParams): Prisma.DonationWhereInput => {
-  const query = donationQuerySchema.parse(Object.fromEntries(params));
-  return {
-    campaignId: query.campaignId,
-    status: query.status,
-    currency: query.currency,
-    amountCents: { gte: query.minAmountCents, lte: query.maxAmountCents },
-    createdAt: {
-      gte: query.from ? new Date(query.from) : undefined,
-      lte: query.to ? new Date(query.to) : undefined,
-    },
-  };
-};
+const donationWhere = (query: DonationQuery): Prisma.DonationWhereInput => ({
+  campaignId: query.campaignId,
+  status: query.status,
+  currency: query.currency,
+  amountCents: { gte: query.minAmountCents, lte: query.maxAmountCents },
+  createdAt: {
+    gte: query.from ? new Date(query.from) : undefined,
+    lte: query.to ? new Date(query.to) : undefined,
+  },
+});
 
 const listDonations = async (context: Context) => {
   const query = donationQuerySchema.parse(
     Object.fromEntries(context.url.searchParams),
   );
   return prisma.donation.findMany({
-    where: donationWhere(context.url.searchParams),
+    where: donationWhere(query),
     orderBy: { [query.sort]: query.order },
     include: { campaign: true, mastercardEvents: true },
   });
 };
 
-const csvValue = (value: unknown) => {
-  const text = String(value ?? "");
-  return `"${text.replaceAll('"', '""')}"`;
-};
-
-const exportCsv = async (context: Context) => {
+const auditedDonationExport = async (
+  context: Context,
+  successAction: string,
+  failureAction: string,
+) => {
   const user = await requireUser(context);
-  let donations: Awaited<ReturnType<typeof listDonations>>;
   try {
-    donations = await listDonations(context);
+    const donations = await listDonations(context);
+    await audit(
+      context.requestId,
+      successAction,
+      "donation",
+      null,
+      user.id,
+      Object.fromEntries(context.url.searchParams),
+    );
+    return donations;
   } catch (error) {
     await audit(
       context.requestId,
-      "donations_export_failed",
+      failureAction,
       "donation",
       null,
       user.id,
@@ -263,13 +270,13 @@ const exportCsv = async (context: Context) => {
     );
     throw error;
   }
-  await audit(
-    context.requestId,
+};
+
+const exportCsv = async (context: Context) => {
+  const donations = await auditedDonationExport(
+    context,
     "donations_exported",
-    "donation",
-    null,
-    user.id,
-    Object.fromEntries(context.url.searchParams),
+    "donations_export_failed",
   );
   const rows = donations.map((donation) => [
     donation.id,
@@ -295,9 +302,7 @@ const exportCsv = async (context: Context) => {
     "receipt_channel",
     "masked_receipt_contact",
   ];
-  const csv = [header, ...rows]
-    .map((row) => row.map(csvValue).join(","))
-    .join("\n");
+  const csv = buildCsv(header, rows);
   context.response.writeHead(200, {
     "Content-Type": "text/csv",
     "X-Request-Id": context.requestId,
@@ -306,74 +311,11 @@ const exportCsv = async (context: Context) => {
   context.response.end(`${csv}\n`);
 };
 
-const pdfText = (text: string) =>
-  text.replaceAll("\\", "\\\\").replaceAll("(", "\\(").replaceAll(")", "\\)");
-
-// one-page dependency-free PDF, swap for a renderer if styled/multipage PDFs matter.
-const buildPdf = (lines: string[]) => {
-  const content = [
-    "BT",
-    "/F1 10 Tf",
-    "50 780 Td",
-    "14 TL",
-    ...lines
-      .slice(0, 48)
-      .flatMap((line, index) => [
-        index ? "T*" : "",
-        `(${pdfText(line.slice(0, 110))}) Tj`,
-      ])
-      .filter(Boolean),
-    "ET",
-  ].join("\n");
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${Buffer.byteLength(content)} >>\nstream\n${content}\nendstream`,
-  ];
-  let pdf = "%PDF-1.4\n";
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
-  });
-  const xref = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  pdf += offsets
-    .slice(1)
-    .map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`)
-    .join("");
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  return Buffer.from(pdf);
-};
-
 const exportPdf = async (context: Context) => {
-  const user = await requireUser(context);
-  let donations: Awaited<ReturnType<typeof listDonations>>;
-  try {
-    donations = await listDonations(context);
-  } catch (error) {
-    await audit(
-      context.requestId,
-      "donations_pdf_export_failed",
-      "donation",
-      null,
-      user.id,
-      {
-        ...Object.fromEntries(context.url.searchParams),
-        error: error instanceof Error ? error.message : String(error),
-      },
-    );
-    throw error;
-  }
-  await audit(
-    context.requestId,
+  const donations = await auditedDonationExport(
+    context,
     "donations_pdf_exported",
-    "donation",
-    null,
-    user.id,
-    Object.fromEntries(context.url.searchParams),
+    "donations_pdf_export_failed",
   );
   const lines = [
     "Tap For Good transaction ledger",
@@ -442,7 +384,10 @@ const dashboard = async (context: Context) => {
 
 const reconciliation = async () => {
   const donations = await prisma.donation.findMany({
-    include: { campaign: true, mastercardEvents: true },
+    include: {
+      campaign: true,
+      mastercardEvents: { orderBy: { processedAt: "desc" }, take: 1 },
+    },
     orderBy: { createdAt: "desc" },
   });
   return donations.map((donation) => {
