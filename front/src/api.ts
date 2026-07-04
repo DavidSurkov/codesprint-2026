@@ -169,6 +169,10 @@ export const api = {
         request<ApiCampaign[]>('/api/campaigns/active').then((campaigns) => campaigns.map(mapCampaign)),
     campaignDashboard: (campaignId: string) =>
         request<ApiDashboard>(`/api/campaigns/${encodeURIComponent(campaignId)}/dashboard`).then(mapDashboard),
+    campaignTopDonations: (campaignId: string) =>
+        request<ApiDonation[]>(`/api/campaigns/${encodeURIComponent(campaignId)}/top-donations`).then((donations) =>
+            donations.map(mapDonation),
+        ),
     createDonation: (body: Json) =>
         request<ApiDonation>('/api/donations', {
             method: 'POST',

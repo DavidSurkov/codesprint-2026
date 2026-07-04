@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import { t, type Lang } from '../i18n';
-import type { Campaign, Currency, Dashboard } from '../types';
-import { classNames, currencies, enumLabel, money } from '../utils';
+import type { Campaign, Currency, Dashboard, Donation } from '../types';
+import { classNames, currencies, enumLabel, formatDate, money } from '../utils';
 import {
     Button,
     Card,
@@ -25,6 +25,7 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
     const navigate = useNavigate();
     const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+    const [topDonations, setTopDonations] = useState<Donation[]>([]);
     const [campaignId, setCampaignId] = useState('');
     const [currency, setCurrency] = useState<Currency>('EUR');
     const [amount, setAmount] = useState('25');
@@ -77,12 +78,15 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
     useEffect(() => {
         if (!campaignId) {
             setDashboard(null);
+            setTopDonations([]);
             return;
         }
         let isMounted = true;
-        api.campaignDashboard(campaignId)
-            .then((next) => {
-                if (isMounted) setDashboard(next);
+        Promise.all([api.campaignDashboard(campaignId), api.campaignTopDonations(campaignId)])
+            .then(([nextDashboard, nextTopDonations]) => {
+                if (!isMounted) return;
+                setDashboard(nextDashboard);
+                setTopDonations(nextTopDonations);
             })
             .catch((requestError: Error) => setError(requestError.message));
         return () => {
@@ -187,6 +191,32 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     <span>{money(dashboard?.totalRaisedEur ?? 0, 'EUR')}</span>
                                     <span>{money(campaign.goalAmount, campaign.currency)}</span>
                                 </div>
+                            </div>
+                            <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                                    {t(lang, 'topDonations')}
+                                </h3>
+                                {topDonations.length ? (
+                                    <ol className="mt-3 grid gap-2">
+                                        {topDonations.map((donation) => (
+                                            <li
+                                                key={donation.id}
+                                                className="flex items-center justify-between gap-4 text-sm"
+                                            >
+                                                <span className="truncate text-slate-500 dark:text-slate-400">
+                                                    {formatDate(donation.createdAt)}
+                                                </span>
+                                                <span className="font-semibold text-slate-900 dark:text-slate-100">
+                                                    {money(donation.amount, donation.currency)}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ol>
+                                ) : (
+                                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                                        {t(lang, 'nothingToShow')}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </Card>

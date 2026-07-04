@@ -109,6 +109,14 @@ export const getDonation = (id: string) =>
         include: { campaign: true },
     });
 
+export const topDonations = (campaignId: string) =>
+    prisma.donation.findMany({
+        where: { campaignId, status: 'succeeded' },
+        orderBy: { amountCents: 'desc' },
+        take: 5,
+        select: { id: true, campaignId: true, amountCents: true, currency: true, createdAt: true },
+    });
+
 export const dashboard = async (campaignId?: string) => {
     const where = { status: 'succeeded' as DonationStatus, campaignId };
     const donations = await prisma.donation.findMany({

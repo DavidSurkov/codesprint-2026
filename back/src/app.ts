@@ -1,6 +1,7 @@
 import {
     activeCampaigns,
     campaignDashboard,
+    campaignTopDonations,
     createDonationController,
     getDonationController,
     health,
@@ -20,6 +21,10 @@ export const handle = async (context: Context) => {
     const campaignDashboardMatch = pathname.match(/^\/api\/campaigns\/([^/]+)\/dashboard$/);
     if (method === 'GET' && campaignDashboardMatch) {
         return campaignDashboard(campaignDashboardMatch[1]);
+    }
+    const topDonationsMatch = pathname.match(/^\/api\/campaigns\/([^/]+)\/top-donations$/);
+    if (method === 'GET' && topDonationsMatch) {
+        return campaignTopDonations(topDonationsMatch[1]);
     }
     if (method === 'POST' && pathname === '/api/donations') {
         return createDonationController(context);
