@@ -135,10 +135,12 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type ButtonSize = 'sm' | 'md';
 
 const buttonVariants: Record<ButtonVariant, string> = {
-    primary: 'bg-brand-700 text-white shadow-sm hover:bg-brand-800 active:bg-brand-900',
-    secondary: 'border border-slate-300 bg-white text-slate-800 shadow-sm hover:border-slate-400 hover:bg-slate-50',
-    ghost: 'text-slate-700 hover:bg-slate-100',
-    danger: 'border border-red-200 bg-white text-red-700 shadow-sm hover:border-red-300 hover:bg-red-50',
+    primary:
+        'bg-brand-700 text-white shadow-sm hover:bg-brand-800 active:bg-brand-900 dark:bg-brand-600 dark:hover:bg-brand-500 dark:active:bg-brand-700',
+    secondary:
+        'border border-slate-300 bg-white text-slate-800 shadow-sm hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-500 dark:hover:bg-slate-700',
+    ghost: 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800',
+    danger: 'border border-red-200 bg-white text-red-700 shadow-sm hover:border-red-300 hover:bg-red-50 dark:border-red-900/60 dark:bg-slate-800 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/40',
 };
 
 const buttonSizes: Record<ButtonSize, string> = {
@@ -182,17 +184,17 @@ export const Button = ({
 );
 
 export const linkButtonClass =
-    'focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800';
+    'focus-ring inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-800 dark:bg-brand-600 dark:hover:bg-brand-500';
 
 export type Tone = 'brand' | 'green' | 'amber' | 'red' | 'slate' | 'blue';
 
 export const toneStyles: Record<Tone, string> = {
-    brand: 'bg-brand-50 text-brand-700 ring-brand-600/20',
-    green: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
-    amber: 'bg-amber-50 text-amber-700 ring-amber-600/20',
-    red: 'bg-red-50 text-red-700 ring-red-600/20',
-    slate: 'bg-slate-100 text-slate-600 ring-slate-500/20',
-    blue: 'bg-sky-50 text-sky-700 ring-sky-600/20',
+    brand: 'bg-brand-50 text-brand-700 ring-brand-600/20 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-500/30',
+    green: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-500/30',
+    amber: 'bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-900/30 dark:text-amber-300 dark:ring-amber-500/30',
+    red: 'bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-900/30 dark:text-red-300 dark:ring-red-500/30',
+    slate: 'bg-slate-100 text-slate-600 ring-slate-500/20 dark:bg-slate-700/50 dark:text-slate-300 dark:ring-slate-400/20',
+    blue: 'bg-sky-50 text-sky-700 ring-sky-600/20 dark:bg-sky-900/30 dark:text-sky-300 dark:ring-sky-500/30',
 };
 
 export const Badge = ({ tone = 'slate', children }: { tone?: Tone; children: React.ReactNode }) => (
@@ -235,7 +237,7 @@ export const ErrorAlert = ({ error }: { error: string }) => (
         {error && (
             <div
                 role="alert"
-                className="animate-fade-in mt-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+                className="animate-fade-in mt-4 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
             >
                 <IconAlert className="mt-0.5 h-4 w-4 shrink-0" />
                 <span>{error}</span>
@@ -245,7 +247,7 @@ export const ErrorAlert = ({ error }: { error: string }) => (
 );
 
 export const FieldError = ({ id, error }: { id: string; error: string }) => (
-    <p id={id} className="mt-1.5 flex items-center gap-1.5 text-sm text-red-700">
+    <p id={id} className="mt-1.5 flex items-center gap-1.5 text-sm text-red-700 dark:text-red-300">
         <IconAlert className="h-3.5 w-3.5 shrink-0" />
         {error}
     </p>
@@ -291,7 +293,7 @@ export const Toggle = ({
     onChange: (checked: boolean) => void;
     label: string;
 }) => (
-    <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-slate-600">
+    <label className="flex cursor-pointer select-none items-center gap-2.5 text-sm font-medium text-slate-600 dark:text-slate-300">
         <span className="relative inline-flex h-5 w-9 shrink-0 items-center">
             <input
                 type="checkbox"
@@ -299,8 +301,8 @@ export const Toggle = ({
                 checked={checked}
                 onChange={(event) => onChange(event.target.checked)}
             />
-            <span className="absolute inset-0 rounded-full bg-slate-300 transition peer-checked:bg-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-700 peer-focus-visible:ring-offset-2" />
-            <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4" />
+            <span className="absolute inset-0 rounded-full bg-slate-300 transition peer-checked:bg-brand-600 peer-focus-visible:ring-2 peer-focus-visible:ring-brand-700 peer-focus-visible:ring-offset-2 dark:bg-slate-600 dark:peer-checked:bg-brand-500 dark:peer-focus-visible:ring-brand-400 dark:peer-focus-visible:ring-offset-slate-900" />
+            <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow transition peer-checked:translate-x-4 dark:bg-slate-100" />
         </span>
         {label}
     </label>
@@ -308,14 +310,14 @@ export const Toggle = ({
 
 export const PageHeading = ({ title, actions }: { title: React.ReactNode; actions?: React.ReactNode }) => (
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{title}</h2>
+        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{title}</h2>
         {actions}
     </div>
 );
 
 export const EmptyRow = ({ colSpan, label }: { colSpan: number; label: string }) => (
     <tr>
-        <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-slate-500">
+        <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400">
             {label}
         </td>
     </tr>
@@ -326,9 +328,12 @@ export const Table = ({ heads, children }: { heads: string[]; children: React.Re
         <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left text-sm">
                 <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50">
+                    <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
                         {heads.map((head) => (
-                            <th key={head} className="whitespace-nowrap px-4 py-3 font-semibold text-slate-500">
+                            <th
+                                key={head}
+                                className="whitespace-nowrap px-4 py-3 font-semibold text-slate-500 dark:text-slate-400"
+                            >
                                 {head}
                             </th>
                         ))}

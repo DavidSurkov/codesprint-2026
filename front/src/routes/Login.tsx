@@ -24,11 +24,11 @@ export const Login = ({ lang }: { lang: Lang }) => {
     return (
         <main className="mx-auto flex max-w-md flex-col px-4 py-14">
             <div className="mb-6 flex flex-col items-center text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white shadow-sm">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-white shadow-sm dark:bg-brand-600">
                     <IconTap className="h-6 w-6" />
                 </span>
-                <h1 className="mt-4 text-2xl font-extrabold text-slate-900">{t(lang, 'login')}</h1>
-                <p className="mt-1 text-sm text-slate-500">{t(lang, 'signInAdmin')}</p>
+                <h1 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-slate-100">{t(lang, 'login')}</h1>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(lang, 'signInAdmin')}</p>
             </div>
             <Card className="animate-scale-in p-6">
                 <form className="grid gap-4" onSubmit={submit}>
@@ -53,7 +53,7 @@ export const Login = ({ lang }: { lang: Lang }) => {
                     <Button type="submit" fullWidth>
                         {t(lang, 'login')}
                     </Button>
-                    <p className="min-h-5 text-center text-sm text-red-700" aria-live="polite">
+                    <p className="min-h-5 text-center text-sm text-red-700 dark:text-red-300" aria-live="polite">
                         {error}
                     </p>
                 </form>

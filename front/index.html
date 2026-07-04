@@ -18,6 +18,29 @@
     </head>
     <body>
         <div id="root"></div>
+        <script>
+            (function () {
+                try {
+                    var root = document.documentElement;
+                    var storedDark = localStorage.getItem('tap_dark_mode');
+                    var dark =
+                        storedDark === null
+                            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+                            : storedDark === '1';
+                    var highContrast = localStorage.getItem('tap_high_contrast') === '1';
+                    if (dark) root.classList.add('dark');
+                    if (highContrast) root.classList.add('high-contrast');
+                    if (localStorage.getItem('tap_large_text') === '1') root.classList.add('large-text');
+                    var meta = document.querySelector('meta[name="theme-color"]');
+                    if (meta) {
+                        meta.setAttribute(
+                            'content',
+                            highContrast ? (dark ? '#000000' : '#ffffff') : dark ? '#020617' : '#047857',
+                        );
+                    }
+                } catch (e) {}
+            })();
+        </script>
         <script type="module" src="/src/main.tsx"></script>
     </body>
 </html>

@@ -59,32 +59,34 @@ export const Confirmation = ({ lang }: { lang: Lang }) => {
     return (
         <main className="mx-auto max-w-3xl px-4 py-10">
             <Card className="animate-scale-in overflow-hidden p-0">
-                <div className="flex flex-col items-center border-b border-slate-100 bg-gradient-to-b from-brand-50 to-white px-6 py-8 text-center">
+                <div className="flex flex-col items-center border-b border-slate-100 bg-gradient-to-b from-brand-50 to-white px-6 py-8 text-center dark:border-slate-800 dark:from-brand-900/20 dark:to-slate-900">
                     {error ? (
-                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600">
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300">
                             <IconAlert className="h-7 w-7" />
                         </span>
                     ) : donation ? (
-                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+                        <span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                             <IconCheckCircle className="h-8 w-8" />
                         </span>
                     ) : (
-                        <Spinner className="h-10 w-10 text-brand-600" />
+                        <Spinner className="h-10 w-10 text-brand-600 dark:text-brand-400" />
                     )}
-                    <h1 className="mt-4 text-2xl font-extrabold text-slate-900">{t(lang, 'confirmation')}</h1>
-                    <p className="mt-1 text-slate-600" aria-live="polite">
+                    <h1 className="mt-4 text-2xl font-extrabold text-slate-900 dark:text-slate-100">
+                        {t(lang, 'confirmation')}
+                    </h1>
+                    <p className="mt-1 text-slate-600 dark:text-slate-400" aria-live="polite">
                         {error || (donation ? t(lang, 'donated') : t(lang, 'loading'))}
                     </p>
                 </div>
 
                 {donation && (
-                    <dl className="grid gap-px bg-slate-100 sm:grid-cols-2">
+                    <dl className="grid gap-px bg-slate-100 dark:bg-slate-800 sm:grid-cols-2">
                         {details.map(([label, value], index) => (
-                            <div key={index} className="bg-white px-6 py-4">
-                                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <div key={index} className="bg-white px-6 py-4 dark:bg-slate-900">
+                                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                                     {label}
                                 </dt>
-                                <dd className="mt-1 text-slate-900">{value}</dd>
+                                <dd className="mt-1 text-slate-900 dark:text-slate-100">{value}</dd>
                             </div>
                         ))}
                     </dl>

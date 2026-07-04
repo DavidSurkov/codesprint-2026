@@ -7,6 +7,17 @@
     --bg: #f4f6f8;
     --bg-accent: #eef2f5;
     --text: #0f172a;
+    --bg-glow-1: rgb(16 185 129 / 0.06);
+    --bg-glow-2: rgb(4 120 87 / 0.05);
+}
+
+.dark {
+    color-scheme: dark;
+    --bg: #020617;
+    --bg-accent: #0f172a;
+    --text: #e2e8f0;
+    --bg-glow-1: rgb(16 185 129 / 0.1);
+    --bg-glow-2: rgb(4 120 87 / 0.12);
 }
 
 @layer base {
@@ -18,8 +29,8 @@
         margin: 0;
         min-height: 100vh;
         background:
-            radial-gradient(60rem 60rem at 110% -10%, rgb(16 185 129 / 0.06), transparent 60%),
-            radial-gradient(50rem 50rem at -10% 0%, rgb(4 120 87 / 0.05), transparent 55%), var(--bg);
+            radial-gradient(60rem 60rem at 110% -10%, var(--bg-glow-1), transparent 60%),
+            radial-gradient(50rem 50rem at -10% 0%, var(--bg-glow-2), transparent 55%), var(--bg);
         color: var(--text);
         font-family:
             'Inter',
@@ -42,18 +53,22 @@
     }
 }
 
-/* Accessibility preference: larger base text */
+/* Accessibility preference: larger base text.
+   The class lives on <html> so rem-based Tailwind sizes scale from the root. */
 .large-text {
     font-size: 112.5%;
 }
 
-/* Accessibility preference: high contrast */
-.high-contrast {
-    background: #fff;
+/* Accessibility preference: high contrast (light theme).
+   The class lives on <html>; we override <body> so the background gradient
+   and theme tokens are replaced by a flat high-contrast surface. */
+.high-contrast body {
+    background: #fff !important;
     color: #000;
 }
 
 .high-contrast .surface {
+    background: #fff !important;
     border-color: #000 !important;
     box-shadow: none !important;
 }
@@ -63,23 +78,35 @@
     text-decoration: underline;
 }
 
+/* High contrast combined with dark theme: flip to pure black/white. */
+.dark.high-contrast body {
+    background: #000 !important;
+    color: #fff;
+}
+
+.dark.high-contrast .surface {
+    background: #000 !important;
+    border-color: #fff !important;
+    box-shadow: none !important;
+}
+
 /* Shared visible focus treatment */
 .focus-ring {
-    @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-white;
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-brand-700 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-brand-400 dark:focus-visible:ring-offset-slate-900;
 }
 
 /* Reusable presentational primitives */
 @layer components {
     .surface {
-        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card;
+        @apply rounded-2xl border border-slate-200/80 bg-white shadow-card dark:border-slate-700/80 dark:bg-slate-900;
     }
 
     .field-input {
-        @apply focus-ring w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50;
+        @apply focus-ring w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-slate-900 shadow-sm transition placeholder:text-slate-400 hover:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-500 dark:disabled:bg-slate-800/60;
     }
 
     .field-label {
-        @apply mb-1.5 block text-sm font-medium text-slate-700;
+        @apply mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300;
     }
 }
 

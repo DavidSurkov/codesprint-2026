@@ -77,7 +77,7 @@ export const AdminShell = ({ lang }: { lang: Lang }) => {
 
     if (isLoading)
         return (
-            <main className="flex items-center justify-center gap-3 p-16 text-slate-500">
+            <main className="flex items-center justify-center gap-3 p-16 text-slate-500 dark:text-slate-400">
                 <Spinner className="h-5 w-5" />
                 {t(lang, 'loading')}
             </main>
@@ -96,12 +96,14 @@ export const AdminShell = ({ lang }: { lang: Lang }) => {
         <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/20 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-500/30">
                         {user.name.charAt(0).toUpperCase()}
                     </span>
                     <div>
-                        <h1 className="text-xl font-extrabold text-slate-900">{t(lang, 'admin')}</h1>
-                        <p className="text-sm text-slate-500">
+                        <h1 className="text-xl font-extrabold text-slate-900 dark:text-slate-100">
+                            {t(lang, 'admin')}
+                        </h1>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                             {user.name} · {roleLabel(lang, user.role)}
                         </p>
                     </div>
@@ -111,7 +113,7 @@ export const AdminShell = ({ lang }: { lang: Lang }) => {
                 </Button>
             </div>
             <nav
-                className="no-print mb-6 flex flex-wrap gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-card"
+                className="no-print mb-6 flex flex-wrap gap-1.5 rounded-2xl border border-slate-200/80 bg-white p-1.5 shadow-card dark:border-slate-700/80 dark:bg-slate-900"
                 aria-label={t(lang, 'admin')}
             >
                 {links.map((link) => {
@@ -125,8 +127,8 @@ export const AdminShell = ({ lang }: { lang: Lang }) => {
                                 classNames(
                                     'focus-ring inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition',
                                     isActive
-                                        ? 'bg-brand-700 text-white shadow-sm'
-                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900',
+                                        ? 'bg-brand-700 text-white shadow-sm dark:bg-brand-600'
+                                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
                                 )
                             }
                         >
@@ -202,10 +204,10 @@ const DashboardPage = ({ lang }: { lang: Lang }) => {
             <PageHeading
                 title={t(lang, 'dashboard')}
                 actions={
-                    <label className="flex items-center gap-2 text-sm font-medium text-slate-600">
+                    <label className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
                         {t(lang, 'campaign')}
                         <select
-                            className="focus-ring rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:border-slate-400"
+                            className="focus-ring rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm hover:border-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-slate-500"
                             value={campaignId}
                             onChange={(event) => setCampaignId(event.target.value)}
                         >
@@ -247,12 +249,15 @@ const DashboardPage = ({ lang }: { lang: Lang }) => {
                 />
             </div>
             <Card className="mt-5 p-6">
-                <h3 className="text-lg font-bold text-slate-900">{t(lang, 'currencyBreakdown')}</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{t(lang, 'currencyBreakdown')}</h3>
                 <dl className="mt-4 grid gap-4 sm:grid-cols-3">
                     {currencies.map((currency) => (
-                        <div key={currency} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                            <dt className="text-sm font-medium text-slate-500">{currency}</dt>
-                            <dd className="mt-1 text-lg font-bold text-slate-900">
+                        <div
+                            key={currency}
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800/60"
+                        >
+                            <dt className="text-sm font-medium text-slate-500 dark:text-slate-400">{currency}</dt>
+                            <dd className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">
                                 {money(dashboard.currencyBreakdown[currency] || 0, currency)}
                             </dd>
                         </div>
@@ -281,7 +286,7 @@ const Metric = ({
 }) => (
     <Card className="p-5">
         <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-slate-500">{label}</h3>
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</h3>
             {icon && (
                 <span
                     className={classNames(
@@ -293,11 +298,11 @@ const Metric = ({
                 </span>
             )}
         </div>
-        <p className="mt-3 text-2xl font-extrabold text-slate-900">{value}</p>
+        <p className="mt-3 text-2xl font-extrabold text-slate-900 dark:text-slate-100">{value}</p>
         {typeof progress === 'number' && (
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
                 <div
-                    className="h-full rounded-full bg-brand-600 transition-all"
+                    className="h-full rounded-full bg-brand-600 transition-all dark:bg-brand-500"
                     style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
                 />
             </div>
@@ -351,7 +356,10 @@ const CampaignsPage = ({ lang, role }: { lang: Lang; role: Role }) => {
             <Table heads={[t(lang, 'name'), t(lang, 'cause'), t(lang, 'status'), t(lang, 'goal'), t(lang, 'actions')]}>
                 {campaigns.length === 0 && <EmptyRow colSpan={5} label={t(lang, 'noCampaigns')} />}
                 {campaigns.map((campaign) => (
-                    <tr key={campaign.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                    <tr
+                        key={campaign.id}
+                        className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/40"
+                    >
                         <td className="px-4 py-3">
                             <div className="flex items-center gap-2.5">
                                 <span
@@ -359,14 +367,14 @@ const CampaignsPage = ({ lang, role }: { lang: Lang; role: Role }) => {
                                     style={{ backgroundColor: campaign.color }}
                                     aria-hidden="true"
                                 />
-                                <span className="font-medium text-slate-900">{campaign.name}</span>
+                                <span className="font-medium text-slate-900 dark:text-slate-100">{campaign.name}</span>
                             </div>
                         </td>
-                        <td className="px-4 py-3 text-slate-600">{campaign.cause}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{campaign.cause}</td>
                         <td className="px-4 py-3">
                             <StatusBadge lang={lang} status={campaign.status} />
                         </td>
-                        <td className="px-4 py-3 font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                             {money(campaign.goalAmount, campaign.currency)}
                         </td>
                         <td className="px-4 py-3">
@@ -436,7 +444,7 @@ const CampaignForm = ({ campaign, lang, onSaved }: { campaign: Campaign | null; 
 
     return (
         <Card className="mb-5 p-6">
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
                 {campaign ? t(lang, 'editCampaign') : t(lang, 'newCampaign')}
             </h3>
             <form className="mt-4 grid gap-4 md:grid-cols-3" onSubmit={submit}>
@@ -488,7 +496,7 @@ const CampaignForm = ({ campaign, lang, onSaved }: { campaign: Campaign | null; 
                 <Field label={t(lang, 'color')} htmlFor="campaign-color">
                     <input
                         id="campaign-color"
-                        className="focus-ring h-[46px] w-full cursor-pointer rounded-xl border border-slate-300 bg-white p-1 shadow-sm"
+                        className="focus-ring h-[46px] w-full cursor-pointer rounded-xl border border-slate-300 bg-white p-1 shadow-sm dark:border-slate-600 dark:bg-slate-800"
                         type="color"
                         value={color}
                         onChange={(event) => setColor(event.target.value)}
@@ -496,7 +504,7 @@ const CampaignForm = ({ campaign, lang, onSaved }: { campaign: Campaign | null; 
                 </Field>
                 <div className="md:col-span-3">
                     <Button type="submit">{campaign ? t(lang, 'saveCampaign') : t(lang, 'createCampaign')}</Button>
-                    <p className="mt-2 text-sm text-red-700" aria-live="polite">
+                    <p className="mt-2 text-sm text-red-700 dark:text-red-300" aria-live="polite">
                         {error}
                     </p>
                 </div>
@@ -564,11 +572,13 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
                 }
             />
             <Card className="mb-4 p-5">
-                <h3 className="text-base font-bold text-slate-900">{t(lang, 'donationLedgerReport')}</h3>
-                <p className="mt-1 text-sm text-slate-500">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    {t(lang, 'donationLedgerReport')}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                     {t(lang, 'generated')}: {formatDate(new Date().toISOString())}
                 </p>
-                <p className="mt-2 text-sm text-slate-700">
+                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
                     <span className="font-medium">{t(lang, 'totalSucceeded')}</span>{' '}
                     {currencies
                         .filter((currency) => totals[currency])
@@ -576,7 +586,7 @@ const LedgerPage = ({ lang }: { lang: Lang }) => {
                         .join(' · ') || money(0, 'EUR')}
                 </p>
             </Card>
-            <div className="no-print mb-4 grid gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card md:grid-cols-4">
+            <div className="no-print mb-4 grid gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card dark:border-slate-700/80 dark:bg-slate-900 md:grid-cols-4">
                 <FilterInput
                     label={t(lang, 'from')}
                     type="date"
@@ -685,23 +695,30 @@ const DonationTable = ({ donations, lang }: { donations: Donation[]; lang: Lang 
     >
         {donations.length === 0 && <EmptyRow colSpan={8} label={t(lang, 'noDonations')} />}
         {donations.map((donation) => (
-            <tr key={donation.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(donation.createdAt)}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">{donation.id}</td>
-                <td className="px-4 py-3 text-slate-700">{donation.campaignName || donation.campaignId}</td>
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900">
+            <tr
+                key={donation.id}
+                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/40"
+            >
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600 dark:text-slate-400">
+                    {formatDate(donation.createdAt)}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">{donation.id}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">
+                    {donation.campaignName || donation.campaignId}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
                     {money(donation.amount, donation.currency)}
                 </td>
-                <td className="px-4 py-3 capitalize text-slate-600">
+                <td className="px-4 py-3 capitalize text-slate-600 dark:text-slate-400">
                     {enumLabel(lang, 'payment', donation.paymentMethod)}
                 </td>
                 <td className="px-4 py-3">
                     <StatusBadge lang={lang} status={donation.status} />
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="px-4 py-3 font-mono text-xs text-slate-500 dark:text-slate-400">
                     {donation.mastercardTransactionId || '-'}
                 </td>
-                <td className="px-4 py-3 text-slate-600">
+                <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                     {enumLabel(lang, 'channel', donation.receiptChannel || 'none')}{' '}
                     {donation.maskedReceiptContact || ''}
                 </td>
@@ -737,11 +754,15 @@ const ReconciliationPage = ({ lang }: { lang: Lang }) => {
             rows={rows.map((row) => ({
                 id: row.id,
                 cells: [
-                    <span className="font-mono text-xs text-slate-500">{row.donationId}</span>,
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{row.donationId}</span>,
                     row.campaignName,
-                    <span className="font-medium text-slate-900">{money(row.amount, row.currency)}</span>,
+                    <span className="font-medium text-slate-900 dark:text-slate-100">
+                        {money(row.amount, row.currency)}
+                    </span>,
                     <StatusBadge lang={lang} status={row.donationStatus} />,
-                    <span className="font-mono text-xs text-slate-500">{row.mastercardTransactionId}</span>,
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                        {row.mastercardTransactionId}
+                    </span>,
                     enumLabel(lang, 'status', row.mastercardStatus),
                     <StatusBadge lang={lang} status={row.matchState} />,
                     row.source,
@@ -781,7 +802,7 @@ const AuditPage = ({ lang }: { lang: Lang }) => {
                     row.actorName === 'System' ? t(lang, 'system') : row.actorName,
                     <Badge tone="blue">{enumLabel(lang, 'action', row.action)}</Badge>,
                     enumLabel(lang, 'entity', row.entityType),
-                    <span className="font-mono text-xs text-slate-500">{row.entityId}</span>,
+                    <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{row.entityId}</span>,
                 ],
             }))}
             error={error}
@@ -808,9 +829,12 @@ const AdminTable = ({
         <Table heads={heads}>
             {rows.length === 0 && <EmptyRow colSpan={heads.length} label={t(lang, 'nothingToShow')} />}
             {rows.map((row) => (
-                <tr key={row.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                <tr
+                    key={row.id}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/40"
+                >
                     {row.cells.map((cell, index) => (
-                        <td key={index} className="px-4 py-3 text-slate-600">
+                        <td key={index} className="px-4 py-3 text-slate-600 dark:text-slate-400">
                             {cell}
                         </td>
                     ))}

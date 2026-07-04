@@ -99,14 +99,14 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
     return (
         <main className="mx-auto grid max-w-6xl items-start gap-8 px-4 py-10 lg:grid-cols-[1fr_440px]">
             <section className="animate-fade-in">
-                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-inset ring-brand-600/20">
+                <span className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-700 ring-1 ring-inset ring-brand-600/20 dark:bg-brand-900/30 dark:text-brand-300 dark:ring-brand-500/30">
                     <IconTap className="h-3.5 w-3.5" />
                     {t(lang, 'contactlessGiving')}
                 </span>
-                <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+                <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-5xl">
                     {t(lang, 'giveHeadline')}
                 </h1>
-                <p className="mt-4 max-w-xl text-lg text-slate-600">{t(lang, 'giveIntro')}</p>
+                <p className="mt-4 max-w-xl text-lg text-slate-600 dark:text-slate-400">{t(lang, 'giveIntro')}</p>
 
                 {campaign ? (
                     <Card className="mt-8 overflow-hidden p-0">
@@ -117,7 +117,7 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     <img
                                         src={campaign.logoUrl}
                                         alt=""
-                                        className="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200"
+                                        className="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200 dark:ring-slate-700"
                                     />
                                 ) : (
                                     <div
@@ -130,45 +130,47 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                 )}
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h2 className="text-xl font-bold text-slate-900">{campaign.name}</h2>
+                                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                                            {campaign.name}
+                                        </h2>
                                         <StatusBadge lang={lang} status={campaign.status} />
                                     </div>
-                                    <p className="mt-0.5 text-slate-600">{campaign.cause}</p>
+                                    <p className="mt-0.5 text-slate-600 dark:text-slate-400">{campaign.cause}</p>
                                 </div>
                             </div>
-                            <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-                                <span className="flex items-center gap-2 text-sm font-medium text-slate-500">
+                            <div className="mt-5 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/60">
+                                <span className="flex items-center gap-2 text-sm font-medium text-slate-500 dark:text-slate-400">
                                     <IconTarget className="h-4 w-4" />
                                     {t(lang, 'fundraisingGoal')}
                                 </span>
-                                <span className="text-lg font-bold text-slate-900">
+                                <span className="text-lg font-bold text-slate-900 dark:text-slate-100">
                                     {money(campaign.goalAmount, campaign.currency)}
                                 </span>
                             </div>
                         </div>
                     </Card>
                 ) : (
-                    <div className="mt-8 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                    <div className="mt-8 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-300">
                         <IconAlert className="mt-0.5 h-5 w-5 shrink-0" />
                         <p>{t(lang, 'noActiveCampaigns')}</p>
                     </div>
                 )}
 
-                <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500">
+                <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
                     <span className="inline-flex items-center gap-2">
-                        <IconShield className="h-4 w-4 text-brand-600" />
+                        <IconShield className="h-4 w-4 text-brand-600 dark:text-brand-400" />
                         {t(lang, 'secureDemoCheckout')}
                     </span>
                     <span className="inline-flex items-center gap-2">
-                        <IconReceipt className="h-4 w-4 text-brand-600" />
+                        <IconReceipt className="h-4 w-4 text-brand-600 dark:text-brand-400" />
                         {t(lang, 'instantReceipt')}
                     </span>
                 </div>
             </section>
 
             <Card className="animate-scale-in p-6">
-                <h2 className="text-xl font-bold text-slate-900">{t(lang, 'donate')}</h2>
-                <p className="mt-1 text-sm text-slate-500">{t(lang, 'completeForm')}</p>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">{t(lang, 'donate')}</h2>
+                <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{t(lang, 'completeForm')}</p>
                 <form className="mt-6 grid gap-5" onSubmit={submit}>
                     <Field label={t(lang, 'campaign')} htmlFor="donate-campaign">
                         <Select
@@ -208,8 +210,8 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     className={classNames(
                                         'focus-ring rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
                                         Number(amount) === item
-                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30'
-                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
+                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30 dark:border-brand-500 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-500/40'
+                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700',
                                     )}
                                     onClick={() => setAmount(String(item))}
                                 >
@@ -218,7 +220,7 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                             ))}
                         </div>
                         <div className="relative mt-2">
-                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-semibold text-slate-500">
+                            <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-sm font-semibold text-slate-500 dark:text-slate-400">
                                 {currency}
                             </span>
                             <TextInput
@@ -249,8 +251,8 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     className={classNames(
                                         'focus-ring flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition',
                                         paymentMethod === value
-                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30'
-                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
+                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30 dark:border-brand-500 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-500/40'
+                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700',
                                     )}
                                 >
                                     <input
@@ -271,7 +273,10 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                     </fieldset>
 
                     {paymentMethod === 'card' && (
-                        <div className="grid gap-4 rounded-xl bg-slate-50 p-4" aria-describedby="card-error">
+                        <div
+                            className="grid gap-4 rounded-xl bg-slate-50 p-4 dark:bg-slate-800/60"
+                            aria-describedby="card-error"
+                        >
                             <Field label={t(lang, 'nameOnCard')} htmlFor="card-name">
                                 <TextInput
                                     id="card-name"
@@ -320,8 +325,8 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                                     className={classNames(
                                         'focus-ring flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold capitalize transition',
                                         receiptChannel === item
-                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30'
-                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50',
+                                            ? 'border-brand-600 bg-brand-50 text-brand-800 ring-1 ring-brand-600/30 dark:border-brand-500 dark:bg-brand-900/30 dark:text-brand-200 dark:ring-brand-500/40'
+                                            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:bg-slate-700',
                                     )}
                                 >
                                     <input
@@ -357,7 +362,7 @@ export const DonorHome = ({ lang }: { lang: Lang }) => {
                             t(lang, 'submit')
                         )}
                     </Button>
-                    <p className="min-h-5 text-sm text-red-700" aria-live="polite">
+                    <p className="min-h-5 text-sm text-red-700 dark:text-red-300" aria-live="polite">
                         {error}
                     </p>
                 </form>
